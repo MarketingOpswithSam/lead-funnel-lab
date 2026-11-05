@@ -15,7 +15,6 @@
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   const PRESET_BLURBS = { balanced: 'A bit of everything', fit: 'Right company, right role', intent: 'Buying signals win', content: 'Rewards downloads' };
-  const QUICK = ['demoRequest', 'pricingPage', 'seniority'];
   const GRADES = [[0.5, 'A+'], [0.47, 'A'], [0.44, 'B'], [0.4, 'C'], [0.34, 'D'], [0, 'F']];
   const gradeOf = (f) => GRADES.find((g) => f >= g[0])[1];
   const gradeRank = (g) => GRADES.findIndex((x) => x[1] === g);
@@ -39,7 +38,7 @@
     expRight: saved.expRight || 0,
     expIdx: Number.isInteger(saved.expIdx) ? saved.expIdx % (EXPERIMENTS.length + 1) : 0,
     touched: !!saved.touched,
-    table: 'mql',
+    table: 'tp',
     show: { tp: true, fn: true, fp: true, tn: true },
   };
   function persist() {
@@ -128,12 +127,12 @@
   function buildControls() {
     $('#presets').innerHTML = Object.entries(PRESETS).map(([k, p]) => `
       <button class="preset" type="button" data-preset="${k}" aria-pressed="false">${esc(p.label.replace(/ \(.*\)$/, ''))}<small>${esc(PRESET_BLURBS[k] || '')}</small></button>`).join('');
-    $('#quick').innerHTML = QUICK.map((k) => ctlHtml(CONTROLS.find((c) => c.key === k))).join('');
-    const rest = CONTROLS.filter((c) => c.key !== 'threshold' && !QUICK.includes(c.key));
+    const rest = CONTROLS.filter((c) => c.key !== 'threshold');
     const groups = {};
     for (const c of rest) (groups[c.group] = groups[c.group] || []).push(c);
-    const names = { 'Fit: who they are': 'Who they are', 'Engagement: what they did': 'What they did', 'Handover and decay': 'Timing' };
-    $('#controls').innerHTML = Object.entries(groups).map(([g, items]) => `<p class="group-h">${esc(names[g] || g)}</p>${items.map(ctlHtml).join('')}`).join('');
+    const names = { 'Engagement: what they did': 'Buying signals', 'Fit: who they are': 'Who they are', 'Handover and decay': 'Timing' };
+    const order = ['Engagement: what they did', 'Fit: who they are', 'Handover and decay'];
+    $('#controls').innerHTML = order.filter((g) => groups[g]).map((g) => `<p class="dock-label">${esc(names[g])}</p>${groups[g].map(ctlHtml).join('')}`).join('');
 
     document.addEventListener('input', (e) => {
       const key = e.target.dataset && e.target.dataset.key;
@@ -153,7 +152,16 @@
       toast('New sample of 500 leads. Same rules, new people.');
     });
     document.querySelectorAll('[data-table]').forEach((b) => b.addEventListener('click', () => { state.table = b.dataset.table; renderLeadTable(); }));
-    $('#leads-fold').addEventListener('toggle', renderLeadTable);
+    $('#leads').addEventListener('pointerover', (e) => { const c = e.target.closest('[data-lead]'); if (c) highlightDot(Number(c.dataset.lead)); });
+    $('#leads').addEventListener('pointerleave', () => highlightDot(-1));
+    $('#leads').addEventListener('click', (e) => {
+      const c = e.target.closest('[data-lead]'); if (!c) return;
+      const i = Number(c.dataset.lead);
+      document.querySelector('.arena').scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'center' });
+      setTimeout(() => showTip(i), REDUCED ? 0 : 450);
+    });
+    document.querySelectorAll('[data-try]').forEach((b) => b.addEventListener('click', () => tryRule(b.dataset.try, b)));
+    $('#ai-btn').addEventListener('click', aiTune);
   }
 
   function applyWeights(w, opts) {
@@ -505,6 +513,7 @@
   }
 
   function renderInsight(t, rate, recall, rows) {
+    if (tuning) return;
     const th = state.weights.threshold;
     const band = rows.filter((r) => r.engaged && r.score < th && r.score >= th - 10);
     const buyers = band.filter((r) => r.lead.salesReady).length;
@@ -558,18 +567,30 @@
     host.style.display = 'flex'; host.style.flexDirection = 'column';
   }
 
+  function highlightDot(i) {
+    dotEls.forEach((d) => d.classList.remove('spot'));
+    if (i >= 0 && dotEls[i]) dotEls[i].classList.add('spot');
+  }
+
   function renderLeadTable() {
-    if (!current || !$('#leads-fold').open) return;
-    const missed = state.table === 'missed';
-    document.querySelectorAll('[data-table]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.table === state.table)));
-    const list = current.rows.filter((r) => (missed ? r.cat === 'fn' : r.mql)).sort((a, b) => b.score - a.score);
-    $('#lead-count').textContent = missed ? list.length + ' buyers the score held back' : list.length + ' leads sent to sales, highest score first';
-    $('#leads').innerHTML = list.length ? list.map((r) => {
+    if (!current) return;
+    const cat = state.table;
+    document.querySelectorAll('[data-table]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.table === cat)));
+    const list = current.rows.map((r, i) => ({ r, i })).filter((x) => x.r.cat === cat).sort((a, b) => b.r.score - a.r.score);
+    const words = { tp: 'buyers you sent to sales', fn: 'buyers the score held back', fp: 'MQLs sales turned down' };
+    $('#lead-count').textContent = list.length + ' ' + words[cat] + '. Hover a card to find its dot, tap to jump there.';
+    const pillCls = { tp: 'sql', fn: 'missed', fp: 'rej' };
+    const pillTxt = { tp: 'SQL', fn: 'Missed buyer', fp: 'Wasted call' };
+    const shown = list.slice(0, 60);
+    $('#leads').innerHTML = shown.length ? shown.map(({ r, i }) => {
       const l = r.lead;
-      const pill = missed ? '<span class="pill missed">Missed</span>' : r.sql ? '<span class="pill sql">SQL</span>' : '<span class="pill rej">Wasted call</span>';
-      return `<tr><td><div class="who">${esc(l.company)}<small>${esc(l.name)}, ${esc(l.title)}</small><small>${esc(l.industry)} · ${esc(l.size)} staff · ${esc(l.country)}</small></div></td>
-        <td>${esc(l.source)}</td><td class="num"><b>${r.score}</b><br><span class="score-split">fit ${r.fit} · activity ${r.engagement}</span></td><td>${pill}</td><td class="reason">${esc(leadReason(r, missed))}</td></tr>`;
-    }).join('') : '<tr><td colspan="5">No leads here with these settings.</td></tr>';
+      return `<button class="lead-card ${cat}" type="button" data-lead="${i}">
+        <span class="lc-top"><b>${esc(l.company)}</b><span class="lc-score">${r.score}</span></span>
+        <span class="lc-who">${esc(l.name)}, ${esc(l.title)}</span>
+        <span class="lc-meta"><span class="pill ${pillCls[cat]}">${pillTxt[cat]}</span>${esc(l.source)} · ${esc(l.country)}</span>
+        <span class="lc-why">${esc(leadReason(r, cat === 'fn'))}</span>
+      </button>`;
+    }).join('') + (list.length > shown.length ? `<p class="lead-more">Plus ${list.length - shown.length} more on the chart.</p>` : '') : '<p class="lead-more">No leads here with these settings. Move the line and see who shows up.</p>';
   }
 
   // ---------- Badges ----------
@@ -673,6 +694,101 @@
 
   function renderSourcesList() {
     $('#src-list').innerHTML = Object.values(SOURCES).map((s) => `<li><a href="${s.url}" target="_blank" rel="noopener">${esc(s.label)}</a></li>`).join('');
+  }
+
+  // ---------- Six rules: try it ----------
+  function f1Of(w) {
+    const t = evaluate(leads, w).totals;
+    const P = t.mql ? t.sql / t.mql : 0, R = t.salesReady ? t.sql / t.salesReady : 0;
+    return P + R ? (2 * P * R) / (P + R) : 0;
+  }
+  function focusArena() {
+    const a = document.querySelector('.arena');
+    const r = a.getBoundingClientRect();
+    if (r.top < 0 || r.bottom > innerHeight) a.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'center' });
+  }
+  let sweeping = 0;
+  function tryRule(kind, btn) {
+    if (kind !== 'buyers') focusArena();
+    if (kind === 'capacity') {
+      const sorted = current.rows.filter((r) => r.engaged).map((r) => r.score).sort((a, b) => b - a);
+      const cut = sorted[Math.min(49, sorted.length - 1)] || 1;
+      applyWeights(Object.assign({}, state.weights, { threshold: Math.max(thc.min, cut) }));
+      setTimeout(() => toast('Room for 50 calls this week. These are the leads that get them.'), 500);
+    } else if (kind === 'buyers') {
+      focusArena();
+      const only = !(state.show.fp === false && state.show.tn === false);
+      state.show = { tp: true, fn: true, fp: !only, tn: !only };
+      document.querySelectorAll('#legend [data-cat]').forEach((b) => b.setAttribute('aria-pressed', String(state.show[b.dataset.cat])));
+      btn.textContent = only ? 'Show everyone again' : 'Try it: show only real buyers';
+      if (only) toast('These are the only leads that would buy. Everything else is noise.');
+      schedule();
+    } else if (kind === 'fit') {
+      applyWeights(Object.assign({}, DEFAULT_WEIGHTS, { demoRequest: 0, eventMeeting: 0, webinarAttend: 0, pricingPage: 0, contentDownload: 0, emailClick: 0, webVisit: 0, unsubscribe: 0, threshold: 30 }));
+      setTimeout(() => toast('Fit only: right companies, but no idea who is buying now. Watch the coral.'), 500);
+    } else if (kind === 'fade') {
+      applyWeights(Object.assign({}, DEFAULT_WEIGHTS, { halfLife: 7 }));
+      setTimeout(() => toast('A 7-day half-life: last month barely counts. See who drops back.'), 500);
+    } else if (kind === 'sweep') {
+      if (sweeping) return;
+      const path = [];
+      for (let v = 45; v >= 20; v -= 1) path.push(v);
+      for (let v = 20; v <= 80; v += 1) path.push(v);
+      for (let v = 80; v >= 45; v -= 1) path.push(v);
+      let k = 0;
+      state.touched = true;
+      svg.classList.add('instant');
+      sweeping = setInterval(() => {
+        state.weights.threshold = path[k++]; syncInputs(); schedule();
+        if (k >= path.length) {
+          clearInterval(sweeping); sweeping = 0; svg.classList.remove('instant');
+          toast('Left: more buyers, more wasted calls. Right: fewer wasted calls, more missed buyers.');
+        }
+      }, REDUCED ? 1 : 28);
+    } else if (kind === 'ai') {
+      aiTune();
+    }
+  }
+
+  // ---------- AI tune: hill-climb on this sample's real outcomes ----------
+  let tuning = false;
+  function aiTune() {
+    if (tuning) return;
+    tuning = true;
+    focusArena();
+    const btn = $('#ai-btn'), label = $('#ai-label');
+    btn.classList.add('running');
+    let w = Object.assign({}, state.weights);
+    let best = f1Of(w);
+    const start = best;
+    let step = 0, kept = 0;
+    const STEPS = 140, TRIES = 6;
+    const tick = () => {
+      for (let n = 0; n < TRIES; n++) {
+        const c = CONTROLS[Math.floor(Math.random() * CONTROLS.length)];
+        const cand = Object.assign({}, w);
+        cand[c.key] = Math.max(c.min, Math.min(c.max, Math.round(w[c.key] + (Math.random() - 0.5) * (c.max - c.min) * 0.3)));
+        const f = f1Of(cand);
+        if (f > best + 1e-9) { best = f; w = cand; kept++; }
+      }
+      step++;
+      state.weights = Object.assign({}, w);
+      syncInputs();
+      schedule();
+      label.textContent = 'Training… ' + Math.round((100 * step) / STEPS) + '% · grade ' + gradeOf(best);
+      if (step < STEPS) { setTimeout(tick, REDUCED ? 0 : 35); return; }
+      tuning = false;
+      btn.classList.remove('running');
+      label.textContent = 'Run the AI again';
+      state.touched = true;
+      const gained = best > start + 1e-6;
+      toast(gained ? `AI reached grade <b>${gradeOf(best)}</b> by learning who actually bought. Can you beat it by hand?` : 'The AI found nothing better from here. Your model was already strong.');
+      if (gradeRank(gradeOf(best)) <= 1) confetti(120);
+      setTimeout(() => {
+        $('#insight').innerHTML = `<b>How the AI did it:</b> it tried ${STEPS * TRIES} small weight changes and kept the ${kept} that lifted the grade, using who really bought in this sample. Predictive scoring in HubSpot, Salesforce or Dynamics 365 does the same with your won and lost deals. It can also overfit: hit Shuffle leads and see if its weights still hold up.`;
+      }, 60);
+    };
+    tick();
   }
 
   // ---------- Boot ----------

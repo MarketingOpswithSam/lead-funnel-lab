@@ -12,7 +12,9 @@ Lead Funnel Lab is a one-page game for B2B marketers. Every one of the 500 sampl
 - **Chase a model grade** from F to A+. The grade balances two meters: sales trust (share of MQLs sales accepts) and buyers caught (share of real buyers you sent). Push one too far and the other drops, so only better weights get you an A.
 - **Test hypotheses.** Five predict-then-reveal experiments, such as "pricing page views vs content downloads: which single signal finds more buyers in your top 100?" Every answer is computed live from the sample, so the reveal always matches what the lab shows.
 - **Unlock challenges** like "Trusted by sales" or "Beat the default", with confetti when you get there.
-- **Read the first principles**: why scoring exists, what a score really is, why the line is a trade, and how AI scoring learns the weights. Sources are listed on the page.
+- **Let the AI tune it.** One click runs a small optimiser that tries hundreds of weight changes against who really bought, live on the chart, then dares you to beat it by hand. It shows how predictive scoring learns, and how it can overfit when you shuffle the leads.
+- **Six rules of lead scoring**, each with a "Try it" button that moves the dots: room for only 50 calls, show only the real buyers, score on fit only, make signals fade fast, sweep the line, let the AI tune it.
+- **Meet your leads**: cards for buyers sent, buyers missed and wasted calls, each with the reason sales took it or passed. Hover a card to find its dot.
 
 Four scoring styles (Balanced, Fit first, Intent first, Content-heavy) give you a one-click starting point. Progress, best grade and settings are saved in your browser.
 

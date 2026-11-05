@@ -79,13 +79,7 @@
         <input type="range" id="w-threshold" data-key="threshold" min="10" max="150" step="1">
       </div>
 
-      <p class="dock-label">What counts most</p>
-      <div id="quick"></div>
-
-      <details class="more-weights">
-        <summary>All weights</summary>
-        <div id="controls"></div>
-      </details>
+      <div id="controls"></div>
       <button class="ghost-btn" id="reset" type="button">Reset to default</button>
     </aside>
 
@@ -95,6 +89,7 @@
           <h2>Every dot is a lead</h2>
           <p>Drag the line or move a slider and watch them jump. Hover a dot to meet the lead.</p>
         </div>
+        <button class="ai-btn" id="ai-btn" type="button"><span class="spark" aria-hidden="true">✦</span><span id="ai-label">Let the AI tune it</span></button>
       </div>
       <div class="legend" id="legend"></div>
       <div class="swarm-wrap" id="swarm-wrap">
@@ -135,35 +130,33 @@
     </div>
   </section>
 
-  <details class="card fold">
-    <summary>Lead scoring from first principles</summary>
+  <section class="card rules" aria-labelledby="rules-h">
+    <div class="exp-top"><h2 id="rules-h">Six rules of lead scoring</h2><span class="pill-count">Tap "Try it" and watch the dots</span></div>
     <div class="principles">
-      <div><b>1</b><h3>Sales time is the scarce thing</h3><p>Reps spend only about 30% of their week selling (Salesforce, State of Sales). A Journal of Marketing study found about 70% of marketing leads were never followed up. Scoring decides who gets those few hours.</p></div>
-      <div><b>2</b><h3>A score is a bet</h3><p>It estimates how likely a lead is to buy soon. Forrester puts the share of leads that become customers below 1%, so most of your list should not go to sales.</p></div>
-      <div><b>3</b><h3>Fit says could, behaviour says now</h3><p>Role, size and industry tell you if they could buy. What they did lately tells you if they are buying now. Only about 5% of B2B buyers are in market at any time (Ehrenberg-Bass for the LinkedIn B2B Institute).</p></div>
-      <div><b>4</b><h3>Signals differ, and they fade</h3><p>A pricing visit last week beats a download last year. This lab ignores email opens, because Apple's Mail Privacy Protection (2021) made them unreliable.</p></div>
-      <div><b>5</b><h3>The line is a trade</h3><p>Move it right and sales trusts you more, but you miss buyers. Move it left and you catch more buyers, but waste calls. Only better weights improve both.</p></div>
-      <div><b>6</b><h3>AI learns the weights</h3><p>Predictive scoring does the same maths but learns the weights from your won and lost deals. Dynamics 365 Sales needs at least 40 qualified and 40 disqualified leads to train a model (Microsoft Learn).</p></div>
+      <div><b>1</b><h3>Sales time is the scarce thing</h3><p>Reps spend only about 30% of their week selling (Salesforce, State of Sales). A Journal of Marketing study found about 70% of marketing leads were never followed up. Scoring decides who gets those few hours.</p><button class="try-btn" type="button" data-try="capacity">Try it: room for 50 calls</button></div>
+      <div><b>2</b><h3>A score is a bet</h3><p>It estimates how likely a lead is to buy soon. Forrester puts the share of leads that become customers below 1%, so most of your list should not go to sales.</p><button class="try-btn" type="button" data-try="buyers">Try it: show only real buyers</button></div>
+      <div><b>3</b><h3>Fit says could, behaviour says now</h3><p>Role, size and industry tell you if they could buy. What they did lately tells you if they are buying now. Only about 5% of B2B buyers are in market at any time (Ehrenberg-Bass for the LinkedIn B2B Institute).</p><button class="try-btn" type="button" data-try="fit">Try it: score on fit only</button></div>
+      <div><b>4</b><h3>Signals differ, and they fade</h3><p>A pricing visit last week beats a download last year. This lab ignores email opens, because Apple's Mail Privacy Protection (2021) made them unreliable.</p><button class="try-btn" type="button" data-try="fade">Try it: make signals fade fast</button></div>
+      <div><b>5</b><h3>The line is a trade</h3><p>Move it right and sales trusts you more, but you miss buyers. Move it left and you catch more buyers, but waste calls. Only better weights improve both.</p><button class="try-btn" type="button" data-try="sweep">Try it: sweep the line</button></div>
+      <div><b>6</b><h3>AI learns the weights</h3><p>Predictive scoring does the same maths but learns the weights from your won and lost deals. Dynamics 365 Sales needs at least 40 qualified and 40 disqualified leads to train a model (Microsoft Learn).</p><button class="try-btn" type="button" data-try="ai">Try it: let the AI tune it</button></div>
     </div>
-  </details>
+  </section>
 
-  <details class="card fold" id="leads-fold">
-    <summary>See every lead and why sales took it or passed</summary>
-    <div class="toggle">
-      <button class="chip-btn" type="button" data-table="mql" aria-pressed="true">MQLs</button>
-      <button class="chip-btn" type="button" data-table="missed" aria-pressed="false">Missed buyers</button>
+  <section class="card meet" aria-labelledby="meet-h">
+    <div class="exp-top">
+      <h2 id="meet-h">Meet your leads</h2>
+      <div class="toggle">
+        <button class="chip-btn" type="button" data-table="tp" aria-pressed="true">Sent to sales</button>
+        <button class="chip-btn" type="button" data-table="fn" aria-pressed="false">Missed buyers</button>
+        <button class="chip-btn" type="button" data-table="fp" aria-pressed="false">Wasted calls</button>
+      </div>
     </div>
     <p class="lead-count" id="lead-count"></p>
-    <div class="table-scroll">
-      <table>
-        <thead><tr><th>Company / contact</th><th>Source</th><th class="num">Score</th><th>Outcome</th><th>Why</th></tr></thead>
-        <tbody id="leads"></tbody>
-      </table>
-    </div>
-  </details>
+    <div class="lead-grid" id="leads"></div>
+  </section>
 
-  <details class="card fold">
-    <summary>Where the data comes from, and sources</summary>
+  <section class="card about-card" aria-labelledby="about-h">
+    <h2 id="about-h">Where the data comes from</h2>
     <div class="about">
       <div>
         <p>None of the leads are real. Your browser makes up 500 B2B leads shaped like a mid-market pipeline across Australia, the Netherlands, India, the UK, Singapore and New Zealand. Each one has a company, a job title, a source and a history of activity.</p>
@@ -175,7 +168,7 @@
         <ul class="src-list" id="src-list"></ul>
       </div>
     </div>
-  </details>
+  </section>
 </main>
 <footer class="wrap foot">Made by <a href="https://marketingopswithsam.com" target="_blank" rel="noopener">Marketing Ops with Sam</a>. All companies and people are made up. Your progress is saved in this browser only.</footer>
 <!--APP-END-->
