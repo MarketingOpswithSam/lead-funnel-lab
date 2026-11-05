@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lead Funnel Lab</title>
+<meta name="description" content="Tune a B2B lead-scoring model against 500 sample leads and watch MQLs, SQLs and conversion by source update live.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+<!--APP-START-->
+<header class="masthead">
+  <div class="wrap">
+    <div class="brand">
+      <h1>Lead Funnel <span>Lab</span></h1>
+      <p>Move the scoring weights and the MQL threshold, and see who gets handed to sales and how many of them sales would actually accept.</p>
+    </div>
+    <div class="dataset">
+      <span class="tag">Sample data</span>
+      <span>500 fictional leads · seed <b id="seed">2611</b></span>
+      <button class="btn" id="reseed" type="button">New sample</button>
+      <button class="btn" id="seed-reset" type="button">Original sample</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap layout">
+  <aside class="rail" aria-label="Scoring model">
+    <div class="rail-head">
+      <h2>Scoring model</h2>
+      <div class="rail-actions">
+        <select id="preset" aria-label="Preset scoring model"></select>
+        <button class="btn" id="reset" type="button">Reset</button>
+      </div>
+    </div>
+    <div id="controls"></div>
+  </aside>
+
+  <div class="results">
+    <section class="kpis" aria-label="Headline numbers">
+      <div class="kpi">
+        <span class="kpi-label">MQLs</span>
+        <span class="kpi-value" id="k-mql">0</span>
+        <span class="kpi-sub" id="k-mql-sub"></span>
+        <span class="kpi-delta" id="d-mql"></span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">SQLs</span>
+        <span class="kpi-value" id="k-sql">0</span>
+        <span class="kpi-sub" id="k-sql-sub"></span>
+        <span class="kpi-delta" id="d-sql"></span>
+      </div>
+      <div class="kpi is-accent">
+        <span class="kpi-label">MQL → SQL</span>
+        <span class="kpi-value" id="k-rate">0%</span>
+        <span class="kpi-sub" id="k-rate-sub"></span>
+        <span class="kpi-delta" id="d-rate"></span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">Missed buyers</span>
+        <span class="kpi-value" id="k-missed">0</span>
+        <span class="kpi-sub" id="k-missed-sub"></span>
+        <span class="kpi-delta" id="d-missed"></span>
+      </div>
+    </section>
+
+    <div class="two-up">
+      <section class="panel" aria-labelledby="funnel-h">
+        <div class="panel-head">
+          <h2 id="funnel-h">Funnel</h2>
+          <p>Bar width is to scale against all leads</p>
+        </div>
+        <div class="funnel" id="funnel"></div>
+      </section>
+
+      <section class="panel hist" aria-labelledby="hist-h">
+        <div class="panel-head">
+          <h2 id="hist-h">Score distribution</h2>
+          <p>Faded bars sit below the threshold</p>
+        </div>
+        <div id="hist"></div>
+        <div class="legend">
+          <span><i class="sw-yes"></i>Sales would accept</span>
+          <span><i class="sw-no"></i>Sales would reject</span>
+          <span><i class="sw-th"></i>MQL threshold</span>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel" aria-labelledby="src-h">
+      <div class="panel-head">
+        <h2 id="src-h">Conversion by source</h2>
+        <p>Sorted by MQL → SQL rate</p>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Source</th><th class="num">Leads</th><th class="num">MQLs</th><th class="num">SQLs</th><th>MQL → SQL</th></tr></thead>
+          <tbody id="sources"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="leads-h">
+      <div class="panel-head">
+        <h2 id="leads-h">Leads</h2>
+        <div class="rail-actions">
+          <button class="btn" type="button" data-table="mql" aria-pressed="true">MQLs</button>
+          <button class="btn" type="button" data-table="missed" aria-pressed="false">Missed buyers</button>
+        </div>
+      </div>
+      <p class="lead-count" id="lead-count"></p>
+      <div class="table-scroll tall">
+        <table>
+          <thead><tr><th>Company / contact</th><th>Account</th><th>Source</th><th class="num">Events</th><th class="num">Score</th><th>Outcome</th></tr></thead>
+          <tbody id="leads"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="how-h">
+      <div class="panel-head">
+        <h2 id="how-h">How scoring works</h2>
+      </div>
+      <div class="how">
+        <div class="formula">score  = fit points + engagement points
+fit    = seniority share × seniority weight + size share × size weight + industry share × industry weight
+event  = weight × 0.5 ^ (days ago ÷ half-life)
+MQL    = score ≥ threshold, and active in the last 90 days
+SQL    = MQL that the simulated sales team accepts</div>
+        <div>
+          <h3>Fit: who they are</h3>
+          <p>Each fit slider sets the points for a perfect match. A C-level contact gets the full seniority points, a director 70%, an individual contributor 15%. Companies with 1,000 to 4,999 staff get full size points. Financial services, healthcare, government and energy &amp; utilities count as target industries; everything else gets 30%.</p>
+        </div>
+        <div>
+          <h3>Engagement: what they did</h3>
+          <p>Every event earns its slider's points, then fades with age. An event one half-life old counts half, two half-lives old a quarter. Only the three most recent events of each type count (ten for page views), so a lead that clicks forty emails can't run away with the score. An unsubscribe takes its penalty in full.</p>
+        </div>
+        <div>
+          <h3>When a lead becomes an MQL</h3>
+          <p>The total has to reach the threshold and the lead has to have done something in the last 90 days. A perfect-fit account that has gone quiet stays in nurture.</p>
+        </div>
+        <div>
+          <h3>Where SQLs come from</h3>
+          <p>Every sample lead carries a hidden flag for whether sales would accept it, driven by the lead's real buying intent and fit. The model can only guess intent from behaviour. The sliders decide who you hand over, and the hidden flag decides who sales keeps, so the MQL → SQL rate shows how well your weights read intent.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+<footer class="wrap foot">All companies and people are generated. Settings are kept in this browser only.</footer>
+<!--APP-END-->
+<script src="assets/leads.js"></script>
+<script src="assets/scoring.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
