@@ -122,6 +122,7 @@ assets/logo*.png    Marketing Ops with Sam logo
 
 ## Changing it
 
+- **After any change to a CSS or JS file**, bump the `?v=` number on the `<link>` and `<script>` tags in `index.html`. GitHub Pages lets browsers cache those files for about 10 minutes, and a new page running an old script breaks.
 - **Brand colours** are the first few lines of `assets/styles.css`: `--brand` (the accent colour) and `--brand-2` (the MQL threshold line). The page always shows a white background, whatever the system theme. The font is DM Sans, loaded in `index.html`.
 - **Default weights and presets** are in `DEFAULT_WEIGHTS` and `PRESETS` in `assets/scoring.js`. Slider ranges and help text are in `CONTROLS` in the same file.
 - **Fit shares, event caps and the 90-day activity window** are constants at the top of `assets/scoring.js`.
