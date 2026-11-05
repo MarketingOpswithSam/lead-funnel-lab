@@ -369,3 +369,27 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .lc-why { font-size: 12.5px; color: var(--ink); }
 .lead-more { color: var(--muted); font-size: 13px; padding: 8px; }
 .about-card h2 { margin-bottom: 12px; }
+
+/* Funnel fills its card */
+.insights > .card { display: flex; flex-direction: column; }
+.funnel { flex: 1; align-content: space-evenly; }
+.stage-track { height: 44px; }
+.leak { margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: #fdf3e1; font-size: 13.5px; }
+.leak b { color: #8a5a00; }
+
+/* Fine print, kept light */
+.fineprint { display: grid; gap: 14px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 860px) { .fineprint { grid-template-columns: minmax(0, 1fr); } }
+.fp-tile { border-radius: var(--radius); padding: 18px 20px; background: var(--brand); color: #fff; transition: transform 200ms var(--spring); }
+.fp-tile:nth-child(2) { background: var(--brand-2); }
+.fp-tile:nth-child(3) { background: var(--c-engaged); }
+.fp-tile:hover { transform: translateY(-3px) rotate(-0.4deg); }
+.fp-big { font-family: var(--font-display); font-size: 40px; line-height: 1; display: block; margin-bottom: 8px; }
+.fp-tile h3 { font-size: 16px; margin-bottom: 4px; }
+.fp-tile p { font-size: 13.5px; color: rgba(255,255,255,0.88); }
+.sources-strip { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 4px 2px; }
+.ss-label { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.ss-chips { display: contents; }
+.ss-chip { font-size: 12.5px; font-weight: 600; color: var(--brand); text-decoration: none; background: var(--brand-tint); border: 1px solid var(--brand-soft); border-radius: 999px; padding: 4px 11px; transition: transform 160ms var(--spring), background 160ms; }
+.ss-chip:hover { background: var(--brand); color: #fff; transform: translateY(-1px); }
+.ss-note { font-size: 12px; color: var(--muted); flex-basis: 100%; }

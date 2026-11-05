@@ -122,6 +122,7 @@
     <div class="card">
       <h2 class="h2">Funnel</h2>
       <div class="funnel" id="funnel"></div>
+      <p class="leak" id="leak"></p>
     </div>
     <div class="card">
       <h2 class="h2">Which sources send buyers</h2>
@@ -155,19 +156,15 @@
     <div class="lead-grid" id="leads"></div>
   </section>
 
-  <section class="card about-card" aria-labelledby="about-h">
-    <h2 id="about-h">Where the data comes from</h2>
-    <div class="about">
-      <div>
-        <p>None of the leads are real. Your browser makes up 500 B2B leads shaped like a mid-market pipeline across Australia, the Netherlands, India, the UK, Singapore and New Zealand. Each one has a company, a job title, a source and a history of activity.</p>
-        <p>Each lead also carries a hidden answer to "would sales take this?", based on how ready they are to buy and how well they fit. The score never sees it, just as your marketing automation never hears the first sales call. That's what makes it a fair test.</p>
-        <p>Use it to try a scoring change before you make it in HubSpot, Marketo or Dynamics 365, or open it in a sales and marketing meeting and agree on the MQL line together.</p>
-      </div>
-      <div>
-        <p class="src-note">Sources referenced on this page. They were found through research but not re-opened from this tool, so check the original before quoting a number.</p>
-        <ul class="src-list" id="src-list"></ul>
-      </div>
-    </div>
+  <section class="fineprint" aria-label="About this lab">
+    <div class="fp-tile"><span class="fp-big">500</span><h3>Made-up leads</h3><p>Fictional companies across Australia, the Netherlands, India, the UK, Singapore and New Zealand, each with a job title, source and activity history.</p></div>
+    <div class="fp-tile"><span class="fp-big">?</span><h3>A hidden sales verdict</h3><p>Every lead secretly knows if sales would take it. The score never sees that answer, just like your marketing automation never hears the first sales call.</p></div>
+    <div class="fp-tile"><span class="fp-big">↺</span><h3>Test before you change</h3><p>Try a scoring change here before you make it in HubSpot, Marketo or Dynamics 365, or play it live in your next sales and marketing meeting.</p></div>
+  </section>
+  <section class="sources-strip" aria-label="Sources">
+    <span class="ss-label">Sources</span>
+    <span id="src-list" class="ss-chips"></span>
+    <span class="ss-note">Found through research. Check the original before quoting a number.</span>
   </section>
 </main>
 <footer class="wrap foot">Made by <a href="https://marketingopswithsam.com" target="_blank" rel="noopener">Marketing Ops with Sam</a>. All companies and people are made up. Your progress is saved in this browser only.</footer>

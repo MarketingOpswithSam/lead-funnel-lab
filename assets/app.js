@@ -544,6 +544,12 @@
       $('#fb-' + i).style.width = Math.max(1.2, pct(s.n, t.total)) + '%';
       tweenNum($('#fc-' + i), s.n, fmt);
     });
+    const drops = [1, 2, 3].map((i) => ({ from: stages[i - 1], to: stages[i], lost: stages[i - 1].n - stages[i].n }));
+    const big = drops.sort((a, b) => b.lost - a.lost)[0];
+    const tip = big.to.name === 'MQL' ? 'Most engaged leads never reach the line. Raise the signals that matter, or lower the line, and watch this shrink.'
+      : big.to.name === 'SQL' ? 'Sales is turning away a lot of your MQLs. Cut points for weak signals like downloads and email clicks.'
+      : 'Many leads have gone quiet. Nurture them back before scoring can help.';
+    $('#leak').innerHTML = `<b>Biggest leak:</b> ${big.from.name} to ${big.to.name} loses ${fmt(big.lost)} leads. ${tip}`;
   }
 
   function renderSources(bySource) {
@@ -693,7 +699,7 @@
   }
 
   function renderSourcesList() {
-    $('#src-list').innerHTML = Object.values(SOURCES).map((s) => `<li><a href="${s.url}" target="_blank" rel="noopener">${esc(s.label)}</a></li>`).join('');
+    $('#src-list').innerHTML = Object.values(SOURCES).map((s) => `<a class="ss-chip" href="${s.url}" target="_blank" rel="noopener" title="${esc(s.label)}">${esc(s.short || s.label)}</a>`).join('');
   }
 
   // ---------- Six rules: try it ----------

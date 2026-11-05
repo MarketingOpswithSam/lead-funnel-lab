@@ -7,14 +7,14 @@
   'use strict';
 
   const SOURCES = {
-    hbr: { label: 'Oldroyd, McElheran & Elkington, "The Short Life of Online Sales Leads", Harvard Business Review, 2011', url: 'https://hbr.org/2011/03/the-short-life-of-online-sales-leads' },
-    b2bi: { label: 'Dawes, "The 95:5 Rule", Ehrenberg-Bass Institute for the LinkedIn B2B Institute, 2021', url: 'https://marketingscience.info/news-and-insights/the-955-rule-why-b2b-growth-starts-long-before-the-purchase' },
-    gartner: { label: 'Gartner press release, "61% of B2B buyers prefer a rep-free buying experience", June 2025', url: 'https://www.gartner.com/en/newsroom/press-releases/2025-06-25-gartner-sales-survey-finds-61-percent-of-b2b-buyers-prefer-a-rep-free-buying-experience' },
-    apple: { label: 'Apple, Mail Privacy Protection announcement, June 2021', url: 'https://www.apple.com/newsroom/2021/06/apple-advances-its-privacy-leadership-with-ios-15-ipados-15-macos-monterey-and-watchos-8/' },
-    salesforce: { label: 'Salesforce, State of Sales report (reps spend about 30% of their time selling)', url: 'https://www.salesforce.com/resources/research-reports/state-of-sales/' },
-    sabnis: { label: 'Sabnis, Chatterjee, Grewal & Lilien, "The Sales Lead Black Hole", Journal of Marketing, 2013', url: 'https://opus.lib.uts.edu.au/handle/10453/117150' },
-    forrester: { label: 'Forrester, "Saying Goodbye To MQLs: Six MQL Myths Squashed", 2023', url: 'https://www.forrester.com/blogs/saying-goodbye-to-mqls-6-mql-myths-squashed-to-shift-your-leads-based-culture' },
-    microsoft: { label: 'Microsoft Learn, Configure predictive lead scoring (Dynamics 365 Sales)', url: 'https://learn.microsoft.com/en-us/dynamics365/sales/configure-predictive-lead-scoring' },
+    hbr: { short: 'HBR 2011', label: 'Oldroyd, McElheran & Elkington, "The Short Life of Online Sales Leads", Harvard Business Review, 2011', url: 'https://hbr.org/2011/03/the-short-life-of-online-sales-leads' },
+    b2bi: { short: 'Ehrenberg-Bass 2021', label: 'Dawes, "The 95:5 Rule", Ehrenberg-Bass Institute for the LinkedIn B2B Institute, 2021', url: 'https://marketingscience.info/news-and-insights/the-955-rule-why-b2b-growth-starts-long-before-the-purchase' },
+    gartner: { short: 'Gartner 2025', label: 'Gartner press release, "61% of B2B buyers prefer a rep-free buying experience", June 2025', url: 'https://www.gartner.com/en/newsroom/press-releases/2025-06-25-gartner-sales-survey-finds-61-percent-of-b2b-buyers-prefer-a-rep-free-buying-experience' },
+    apple: { short: 'Apple 2021', label: 'Apple, Mail Privacy Protection announcement, June 2021', url: 'https://www.apple.com/newsroom/2021/06/apple-advances-its-privacy-leadership-with-ios-15-ipados-15-macos-monterey-and-watchos-8/' },
+    salesforce: { short: 'Salesforce State of Sales', label: 'Salesforce, State of Sales report (reps spend about 30% of their time selling)', url: 'https://www.salesforce.com/resources/research-reports/state-of-sales/' },
+    sabnis: { short: 'Journal of Marketing 2013', label: 'Sabnis, Chatterjee, Grewal & Lilien, "The Sales Lead Black Hole", Journal of Marketing, 2013', url: 'https://opus.lib.uts.edu.au/handle/10453/117150' },
+    forrester: { short: 'Forrester 2023', label: 'Forrester, "Saying Goodbye To MQLs: Six MQL Myths Squashed", 2023', url: 'https://www.forrester.com/blogs/saying-goodbye-to-mqls-6-mql-myths-squashed-to-shift-your-leads-based-culture' },
+    microsoft: { short: 'Microsoft Learn', label: 'Microsoft Learn, Configure predictive lead scoring (Dynamics 365 Sales)', url: 'https://learn.microsoft.com/en-us/dynamics365/sales/configure-predictive-lead-scoring' },
   };
 
   const EXPERIMENTS = [
