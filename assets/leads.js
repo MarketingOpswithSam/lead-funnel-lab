@@ -178,7 +178,8 @@
 
       events.sort((a, b) => a.daysAgo - b.daysAgo);
 
-      const salesReady = rand() < sigmoid(-5.1 + 5.6 * intent + 2.4 * fit);
+      // Students, recruiters and freelancers can be very active, but sales never takes them.
+      const salesReady = rand() < sigmoid(-5.1 + 5.6 * intent + 2.4 * fit) && sen.level !== 'Other';
 
       leads.push({
         id: 'L' + String(i + 1).padStart(4, '0'),

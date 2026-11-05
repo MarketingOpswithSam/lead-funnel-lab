@@ -33,7 +33,7 @@
   };
 
   const CONTROLS = [
-    { group: 'Handover and decay', key: 'threshold', label: 'MQL threshold', min: 10, max: 150, step: 1, unit: 'pts', hint: 'Score needed to hand a lead to sales' },
+    { group: 'Handover and decay', key: 'threshold', label: 'MQL line', min: 1, max: 150, step: 1, unit: 'pts', hint: 'Score needed to hand a lead to sales' },
     { group: 'Handover and decay', key: 'halfLife', label: 'Engagement half-life', min: 7, max: 180, step: 1, unit: 'days', hint: 'An event this old counts half' },
 
     { group: 'Fit: who they are', key: 'seniority', label: 'Role seniority', min: 0, max: 40, step: 1, unit: 'pts', hint: 'Full points for C-level, 70% for directors, 15% for individual contributors' },
