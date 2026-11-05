@@ -25,6 +25,24 @@
 </header>
 
 <main class="wrap page">
+  <section class="card about" aria-label="About this tool">
+    <div>
+      <h2>Where the data comes from</h2>
+      <p>None of it is real. Your browser makes up 500 B2B leads every time the page loads, shaped like a mid-market pipeline across Australia, the Netherlands, India, the UK, Singapore and New Zealand. Each lead has a company, a job title, a lead source and a history of activity: email clicks, page visits, webinars, event chats, pricing views and demo requests.</p>
+      <p>Each lead also has a hidden answer to "would sales take this?", based on how ready they are to buy and how well they fit. The score never sees that answer, the same way your marketing automation never hears what sales hears on the first call.</p>
+    </div>
+    <div>
+      <h2>How marketers can use it</h2>
+      <ul>
+        <li>Try a scoring change here before you make it in HubSpot, Marketo or Dynamics 365 Customer Insights, and see what it does to MQL volume and sales acceptance.</li>
+        <li>Open it in a sales and marketing meeting and agree on the MQL threshold together, with both teams watching the trade-off between more leads and better leads.</li>
+        <li>Use the missed buyers to make the case for SDR follow-up or a nurture track for leads sitting just under the line.</li>
+        <li>Check your channels. If one source keeps sending MQLs that sales turns down, give fewer points to what that channel creates.</li>
+        <li>To use your own data, export leads with their activity and the sales outcome from your CRM and swap them in. The README explains how.</li>
+      </ul>
+    </div>
+  </section>
+
   <section class="card controls" aria-label="Scoring model">
     <div>
       <p class="step-label">1. Pick a scoring style</p>
@@ -39,8 +57,14 @@
       <small>Leads at or above this score go to sales. Lower it and sales gets more leads, but more of them won't be ready. Raise it and sales gets fewer, better leads, but some real buyers wait in nurture.</small>
     </div>
 
+    <div>
+      <p class="step-label">3. Decide what counts most</p>
+      <p class="why">These three move the numbers most. A demo request is the clearest buying signal, pricing views come next, and seniority tells you if the person can sign. Drag them and watch who crosses the line.</p>
+      <div class="quick" id="quick"></div>
+    </div>
+
     <details class="tune" id="tune">
-      <summary>Fine-tune weights</summary>
+      <summary>All weights</summary>
       <div class="tune-body">
         <div class="tune-groups" id="controls"></div>
         <div class="tune-foot"><button class="btn" id="reset" type="button">Reset to default</button></div>
@@ -89,6 +113,7 @@
     <section class="card hist" aria-labelledby="hist-h">
       <div class="card-head">
         <h2 id="hist-h">Score distribution</h2>
+        <p class="hint">Click the chart to move the MQL line</p>
       </div>
       <p class="why">Blue leads are ones sales would take, grey ones they would pass on. A good model pushes blue to the right of the line and grey to the left. Where the colours overlap, moving the line can't separate them. Changing the weights can.</p>
       <div id="hist"></div>

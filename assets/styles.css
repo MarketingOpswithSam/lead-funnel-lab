@@ -1,6 +1,7 @@
 /* Layout: one calm column. Controls on top, numbers, two charts side by side, source table, then collapsible detail. */
-/* Light first: white page, neutral greys, one blue accent. Change the brand colours below. */
+/* White page in every system theme, neutral greys, one blue accent. Change the brand colours below. */
 :root {
+  color-scheme: light;
   /* ---- Brand colours: change these ---- */
   --brand: #2563eb;        /* main colour: SQLs, selected style, sliders */
   --brand-2: #111827;      /* MQL threshold line */
@@ -22,50 +23,10 @@
   --bad: #b91c1c;
   --shadow: none;
 
+  --flash: #dbeafe;
   --font: 'DM Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
   --radius: 12px;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --brand: #60a5fa;
-    --brand-2: #f3f4f6;
-    --on-brand: #0b1220;
-    --bg: #0f1115;
-    --surface: #15171c;
-    --surface-2: #1b1e24;
-    --ink: #f3f4f6;
-    --muted: #9ca3af;
-    --line: #2a2e36;
-    --brand-soft: #172338;
-    --brand-2-soft: #1b1e24;
-    --reject: #2f343d;
-    --mid: #2f5b9a;
-    --engaged: #4b5563;
-    --good: #4ade80;
-    --bad: #f87171;
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --brand: #60a5fa;
-  --brand-2: #f3f4f6;
-  --on-brand: #0b1220;
-  --bg: #0f1115;
-  --surface: #15171c;
-  --surface-2: #1b1e24;
-  --ink: #f3f4f6;
-  --muted: #9ca3af;
-  --line: #2a2e36;
-  --brand-soft: #172338;
-  --brand-2-soft: #1b1e24;
-  --reject: #2f343d;
-  --mid: #2f5b9a;
-  --engaged: #4b5563;
-  --good: #4ade80;
-  --bad: #f87171;
-  color-scheme: dark;
-}
-
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body {
@@ -240,3 +201,28 @@ details.more[open] > summary { margin-bottom: 16px; }
 .how p { color: var(--muted); font-size: 13.5px; max-width: 60ch; }
 
 .foot { color: var(--muted); font-size: 12px; padding-block: 0 32px; }
+
+/* Quick weights, always visible */
+.quick { display: grid; gap: 4px 28px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 760px) { .quick { grid-template-columns: minmax(0, 1fr); } }
+.ctl input, .threshold input { cursor: pointer; height: 20px; }
+
+/* Show that numbers react */
+.kpi-value, .stage-count { border-radius: 6px; transition: background-color 700ms ease; }
+.kpi-value.changed, .stage-count.changed { background-color: var(--flash); transition: none; }
+@media (prefers-reduced-motion: reduce) { .kpi-value, .stage-count { transition: none; } }
+
+/* Clickable chart */
+.hist svg { cursor: crosshair; }
+.hist .bin:hover rect { opacity: 0.75; }
+.hint { font-size: 12px; color: var(--muted); }
+.preset { transition: border-color 150ms, background 150ms, transform 150ms; }
+.preset:active { transform: scale(0.98); }
+
+/* About strip */
+.about { display: grid; gap: 20px 36px; }
+@media (min-width: 860px) { .about { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.about h2 { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+.about p, .about li { color: var(--muted); font-size: 13.5px; line-height: 1.6; max-width: 62ch; }
+.about p + p { margin-top: 8px; }
+.about ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }

@@ -40,6 +40,27 @@
   }
 
   // ---------- Controls ----------
+  function ctlHtml(c) {
+    return `
+          <div class="ctl">
+            <label for="w-${c.key}">${esc(c.label)}</label>
+            <output id="o-${c.key}" for="w-${c.key}"></output>
+            <input type="range" id="w-${c.key}" data-key="${c.key}" min="${c.min}" max="${c.max}" step="${c.step}" />
+            <small>${esc(c.hint)}</small>
+          </div>`;
+  }
+  let histScale = null;
+  const lastShown = {};
+  function setNum(id, text) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (lastShown[id] !== undefined && lastShown[id] !== text) {
+      el.classList.add('changed');
+      requestAnimationFrame(() => requestAnimationFrame(() => el.classList.remove('changed')));
+    }
+    lastShown[id] = text;
+    el.textContent = text;
+  }
   function buildControls() {
     $('#presets').innerHTML = Object.entries(PRESETS).map(([k, p]) => `
       <button class="preset" type="button" data-preset="${k}" aria-pressed="false">
@@ -52,9 +73,12 @@
       schedule();
     }));
 
+    const QUICK = ['demoRequest', 'pricingPage', 'seniority'];
+    $('#quick').innerHTML = QUICK.map((k) => CONTROLS.find((c) => c.key === k)).map((c) => ctlHtml(c)).join('');
+
     const groups = [];
     for (const c of CONTROLS) {
-      if (c.key === 'threshold') continue;
+      if (c.key === 'threshold' || QUICK.includes(c.key)) continue;
       const name = GROUP_NAMES[c.group] || c.group;
       let g = groups.find((x) => x.name === name);
       if (!g) { g = { name, items: [] }; groups.push(g); }
@@ -75,13 +99,20 @@
     ];
     $('#controls').innerHTML = columns.map((col) => `<div class="group">${col.map((g) => `
         <h3>${esc(g.name)}</h3>
-        ${g.items.map((c) => `
-          <div class="ctl">
-            <label for="w-${c.key}">${esc(c.label)}</label>
-            <output id="o-${c.key}" for="w-${c.key}"></output>
-            <input type="range" id="w-${c.key}" data-key="${c.key}" min="${c.min}" max="${c.max}" step="${c.step}" />
-            <small>${esc(c.hint)}</small>
-          </div>`).join('')}`).join('')}</div>`).join('');
+        ${g.items.map(ctlHtml).join('')}`).join('')}</div>`).join('');
+
+    // Click the score chart to move the MQL line there.
+    $('#hist').addEventListener('click', (e) => {
+      const svg = e.currentTarget.querySelector('svg');
+      if (!svg || !histScale) return;
+      const box = svg.getBoundingClientRect();
+      const vx = ((e.clientX - box.left) / box.width) * histScale.W;
+      const score = Math.round(((vx - histScale.l) / histScale.pw) * histScale.xMax);
+      const thc = CONTROLS.find((c) => c.key === 'threshold');
+      state.weights.threshold = Math.max(thc.min, Math.min(thc.max, score));
+      syncInputs();
+      schedule();
+    });
 
     document.addEventListener('input', (e) => {
       const key = e.target.dataset && e.target.dataset.key;
@@ -264,13 +295,13 @@
 
   function renderKpis(t) {
     const rate = pct(t.sql, t.mql);
-    $('#k-mql').textContent = fmt(t.mql);
+    setNum('k-mql', fmt(t.mql));
     $('#k-mql-sub').textContent = pct(t.mql, t.total).toFixed(0) + '% of all leads';
-    $('#k-sql').textContent = fmt(t.sql);
+    setNum('k-sql', fmt(t.sql));
     $('#k-sql-sub').textContent = 'accepted by sales';
-    $('#k-rate').textContent = t.mql ? rate.toFixed(0) + '%' : '–';
+    setNum('k-rate', t.mql ? rate.toFixed(0) + '%' : '–');
     $('#k-rate-sub').textContent = fmt(t.mql - t.sql) + ' MQLs rejected';
-    $('#k-missed').textContent = fmt(t.missed);
+    setNum('k-missed', fmt(t.missed));
     $('#k-missed-sub').textContent = 'ready to buy, never sent to sales';
     delta($('#d-mql'), t.mql, baseline.mql);
     delta($('#d-sql'), t.sql, baseline.sql);
@@ -291,9 +322,10 @@
         <div class="stage">
           <div class="stage-name">${s.name}<small>${esc(s.note)}</small></div>
           <div class="stage-track"><div class="stage-bar" data-stage="${i}" style="width:${w.toFixed(2)}%"></div></div>
-          <div class="stage-count">${fmt(s.n)}</div>
+          <div class="stage-count" id="fc-${i}"></div>
         </div>`;
     }).join('');
+    stages.forEach((s, i) => setNum('fc-' + i, fmt(s.n)));
   }
 
   function niceMax(v) {
@@ -318,6 +350,7 @@
 
     const W = 560, H = 250, m = { l: 34, r: 10, t: 28, b: 28 };
     const pw = W - m.l - m.r, ph = H - m.t - m.b;
+    histScale = { W, l: m.l, pw, xMax };
     const x = (v) => m.l + (v / xMax) * pw;
     const y = (v) => m.t + ph - (v / yMax) * ph;
 

@@ -29,6 +29,29 @@ Each headline number also shows the change against the default model, so you can
 
 Every section explains itself in plain language. A summary under the headline numbers reads them back to you. The score chart tells you what lowering the threshold by 10 points would add, and how many of those leads would be buyers. Each lead source has a short note on why it converts the way it does. The leads table gives the reason sales took or passed on every MQL, and why each missed buyer was held back. Those reasons are built from the lead's hidden intent, its fit and its recent activity.
 
+## How marketers can use it
+
+- Try a scoring change here before making it in HubSpot, Marketo or Dynamics 365 Customer Insights, and see what it does to MQL volume and sales acceptance.
+- Open it in a sales and marketing meeting and agree on the MQL threshold together, with both teams watching the trade-off between more leads and better leads.
+- Use the missed buyers list to make the case for SDR follow-up or a nurture track for leads sitting just under the line.
+- Check channels. If one source keeps sending MQLs that sales turns down, give fewer points to the events that channel creates instead of raising the bar for everyone.
+
+## Using your own data
+
+`generateLeads()` in `assets/leads.js` returns an array of plain objects. To run the lab on a real export, replace that call in `assets/app.js` with your own array in the same shape:
+
+```js
+{
+  id: 'L0001', name: 'Jane Doe', title: 'IT Director', seniority: 'Director',
+  company: 'Example Co', industry: 'Healthcare', icp: true, size: '200–999',
+  country: 'Australia', source: 'Webinar',
+  events: [{ type: 'pricing_page', daysAgo: 4 }, { type: 'email_click', daysAgo: 12 }],  // most recent first
+  salesReady: true,   // did sales accept it? take this from your CRM's lead status or disqualification reason
+}
+```
+
+Seniority, size and event types must use the values listed in `assets/scoring.js`. `intent` and `fit` are only used for the reasons text in the leads table, so set them to rough 0 to 1 estimates (for example from deal stage). Keep real customer data out of a public repository.
+
 ## How the sample data works
 
 `assets/leads.js` builds the leads from a seeded random number generator, so the same seed always gives the same 500 leads.
@@ -98,7 +121,7 @@ The empty `.nojekyll` file tells GitHub Pages to serve the files as they are wit
 
 ```
 index.html          page layout and the "How scoring works" panel
-assets/styles.css   styles, light and dark themes
+assets/styles.css   styles and brand colours
 assets/leads.js     seeded sample lead generator
 assets/scoring.js   weights, presets, scoring and funnel maths
 assets/app.js       sliders, charts and tables
@@ -107,7 +130,7 @@ assets/app.js       sliders, charts and tables
 
 ## Changing it
 
-- **Brand colours** are the first few lines of `assets/styles.css`: `--brand` (the accent colour) and `--brand-2` (the MQL threshold line), with matching dark-mode values just below. The font is DM Sans, loaded in `index.html`.
+- **Brand colours** are the first few lines of `assets/styles.css`: `--brand` (the accent colour) and `--brand-2` (the MQL threshold line). The page always shows a white background, whatever the system theme. The font is DM Sans, loaded in `index.html`.
 - **Default weights and presets** are in `DEFAULT_WEIGHTS` and `PRESETS` in `assets/scoring.js`. Slider ranges and help text are in `CONTROLS` in the same file.
 - **Fit shares, event caps and the 90-day activity window** are constants at the top of `assets/scoring.js`.
 - **Lead sources, their share of volume and their base intent** are in `SOURCES` in `assets/leads.js`. Industries, seniority mix, countries and name pools sit next to it.
