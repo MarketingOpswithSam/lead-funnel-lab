@@ -794,29 +794,36 @@
     return key === 'rate' ? pct(t.sql, t.mql) : t[key];
   }
   function expProgress() {
-    $('#exp-progress').textContent = state.expDone.size + ' of ' + EXPERIMENTS.length + ' · ' + state.expRight + ' right';
+    const p = $('#exp-progress'); if (!p) return;
+    p.textContent = state.expDone.size ? `You've answered ${state.expDone.size} of ${EXPERIMENTS.length} and got ${state.expRight} right.` : '';
+  }
+  function dotsHtml() {
+    return `<div class="exp-dots" aria-hidden="true">${EXPERIMENTS.map((e, i) => `<i class="${i === state.expIdx ? 'now' : state.expDone.has(e.id) ? 'done' : ''}"></i>`).join('')}</div>`;
   }
 
   function renderExp(focusFirst) {
     const body = $('#exp-body');
     expProgress();
     if (state.expIdx >= EXPERIMENTS.length) {
-      body.innerHTML = `<div class="exp-card"><p class="exp-hyp">All done</p><p class="exp-hyp-text" tabindex="-1" id="exp-focus">You called ${state.expRight} of ${EXPERIMENTS.length} correctly.</p>
-        <p class="exp-q">Every answer came from this sample of 500 leads, computed live. Shuffle the leads and play again to see which lessons hold.</p>
-        <div class="exp-actions"><button class="primary-btn" id="exp-restart" type="button">Play again</button></div></div>`;
+      body.innerHTML = `<div class="exp-card">${dotsHtml()}<p class="exp-step">All five done</p>
+        <h3 class="exp-title" tabindex="-1" id="exp-focus">You got ${state.expRight} of ${EXPERIMENTS.length} right.</h3>
+        <p class="exp-ask">Every answer came from these 500 leads, worked out live. Press "Shuffle leads" at the top for a new set of leads and see if the answers still hold.</p>
+        <div class="exp-actions"><button class="primary-btn" id="exp-restart" type="button">Start again</button></div></div>`;
       $('#exp-restart').onclick = () => { state.expIdx = 0; state.expRight = 0; state.expDone.clear(); persist(); renderExp(true); };
       if (focusFirst) $('#exp-focus').focus();
       return;
     }
     const ex = EXPERIMENTS[state.expIdx];
-    let choices;
-    if (ex.kind === 'duel') {
-      choices = ['a', 'b'].map((k) => `<button class="choice" type="button" data-pick="${k}">${esc(ex[k].label)}<span class="num" id="num-${k}"></span><span class="bar"><i id="bar-${k}"></i></span></button>`).join('');
-    } else {
-      choices = `<button class="choice" type="button" data-pick="up">▲ Goes up</button><button class="choice" type="button" data-pick="down">▼ Goes down</button>`;
-    }
-    body.innerHTML = `<div class="exp-card"><p class="exp-hyp">Hypothesis ${state.expIdx + 1}</p><p class="exp-hyp-text">${esc(ex.hypothesis)}</p>
-      <p class="exp-q">${esc(ex.question)} <b>Make your call:</b></p><div class="choices">${choices}</div><div id="exp-result"></div></div>`;
+    const keys = ex.kind === 'duel' ? ['a', 'b'] : ['up', 'down'];
+    const label = (k) => (ex.kind === 'duel' ? ex[k].label : ex[k]);
+    const choices = keys.map((k) => `<button class="choice" type="button" data-pick="${k}"><span class="choice-label">${esc(label(k))}</span><span class="choice-result" id="res-${k}"></span></button>`).join('');
+    body.innerHTML = `<div class="exp-card">${dotsHtml()}<p class="exp-step">Question ${state.expIdx + 1} of ${EXPERIMENTS.length}</p>
+      <h3 class="exp-title">${esc(ex.title)}</h3>
+      <p class="exp-ask">${esc(ex.ask)}</p>
+      <p class="exp-pick">Pick your answer:</p>
+      <div class="choices">${choices}</div>
+      <p class="exp-how"><b>How we check:</b> ${esc(ex.how)}</p>
+      <div id="exp-result" aria-live="polite"></div></div>`;
     body.querySelectorAll('[data-pick]').forEach((b) => b.addEventListener('click', () => runExp(ex, b.dataset.pick, b)));
     if (focusFirst) body.querySelector('[data-pick]').focus();
   }
@@ -825,25 +832,27 @@
     const body = $('#exp-body');
     body.querySelectorAll('[data-pick]').forEach((b) => { b.setAttribute('aria-disabled', 'true'); b.disabled = true; });
     btn.classList.add('picked');
+    btn.querySelector('.choice-label').insertAdjacentHTML('afterend', '<span class="your-pick">Your pick</span>');
     const SPEED = REDUCED ? 0 : 1100;
-    let right, actual, extra = '', actions = '';
-    let loadWeights = null;
+    let right, actual, loadWeights, showLabel;
     if (ex.kind === 'duel') {
       const A = topModel(ex.a.weights), B = topModel(ex.b.weights);
       actual = A.buyers >= B.buyers ? 'a' : 'b';
       right = pick === actual;
+      const random = Math.round(pct(leads.filter((l) => l.salesReady).length, leads.length));
       ['a', 'b'].forEach((k) => {
         const m = k === 'a' ? A : B;
+        $('#res-' + k).innerHTML = `<span class="r-num"><b id="num-${k}">0</b> of the top 100 are real buyers</span>
+          <span class="r-bar"><i id="bar-${k}"></i><s style="left:${random}%" title="A random pick"></s></span>`;
         const n = $('#num-' + k); n._v = 0;
-        tweenNum(n, m.buyers, (v) => Math.round(v) + ' buyers', SPEED);
-        requestAnimationFrame(() => { $('#bar-' + k).style.width = m.buyers + '%'; });
+        tweenNum(n, m.buyers, (v) => Math.round(v), SPEED);
+        requestAnimationFrame(() => requestAnimationFrame(() => { $('#bar-' + k).style.width = m.buyers + '%'; }));
       });
       const win = actual === 'a' ? A : B;
       loadWeights = Object.assign({}, ZERO, ex[actual].weights, { threshold: win.cut });
       setTimeout(() => body.querySelector(`[data-pick="${actual}"]`).classList.add('winner'), SPEED);
-      const randomBuyers = Math.round(pct(leads.filter((l) => l.salesReady).length, leads.length));
-      extra = `<p class="src">Out of the 100 top-scored leads. A random 100 would hold about ${randomBuyers} buyers.</p>`;
-      actions = '<button class="ghost-btn inline" id="exp-load" type="button">Show the winner in the lab</button>';
+      body.querySelector('.exp-how').insertAdjacentHTML('beforeend', ` The thin line on each bar shows what a random pick of 100 leads would find (about ${random}).`);
+      showLabel = 'Show the winner on the chart';
     } else {
       const before = metricOf(DEFAULT_WEIGHTS, ex.metric);
       loadWeights = Object.assign({}, DEFAULT_WEIGHTS, ex.patch);
@@ -851,30 +860,28 @@
       actual = after > before ? 'up' : 'down';
       right = pick === actual;
       const f = ex.metric === 'rate' ? (v) => Math.round(v) + '%' : fmt;
-      const res = document.createElement('div');
-      res.className = 'dir-row';
-      res.innerHTML = `<span>${esc(ex.metricLabel)}</span><span class="dir-num">${f(before)}</span><span class="dir-arrow">→</span><span class="dir-num" id="dir-b">${f(before)}</span>`;
-      $('#exp-result').before(res);
+      $('#res-' + actual).innerHTML = `<span class="r-num">${esc(ex.metricLabel)}: <b>${f(before)}</b> → <b id="dir-b">${f(before)}</b></span>`;
       const nb = $('#dir-b'); nb._v = before; tweenNum(nb, after, f, SPEED);
-      actions = '<button class="ghost-btn inline" id="exp-load" type="button">Show it in the lab</button>';
+      setTimeout(() => body.querySelector(`[data-pick="${actual}"]`).classList.add('winner'), SPEED);
+      showLabel = 'Show this on the chart';
     }
     const ctx = { demoLeads: leads.filter((l) => l.events.some((e) => e.type === 'demo_request')).length, total: leads.length };
     const lessonText = typeof ex.lesson === 'function' ? ex.lesson(ctx) : ex.lesson;
-    const lesson = actual === ex.expect ? lessonText : 'This sample went against the usual pattern, which happens with small numbers. Shuffle the leads and try again to see if it holds.';
+    const lesson = actual === ex.expect ? lessonText : 'These 500 leads went against the usual pattern, which can happen with a small sample. Press "Shuffle leads" at the top and try this question again.';
     const src = ex.source && SOURCES[ex.source] ? `<p class="src">Source: <a href="${SOURCES[ex.source].url}" target="_blank" rel="noopener">${esc(SOURCES[ex.source].label)}</a></p>` : '';
     if (!state.expDone.has(ex.id)) { state.expDone.add(ex.id); if (right) state.expRight++; }
     setTimeout(() => {
-      $('#exp-result').innerHTML = `<div class="verdict ${right ? 'right' : 'wrong'}"><h3 tabindex="-1" id="verdict-h">${right ? 'You called it!' : 'Not this time.'}</h3><p>${esc(lesson)}</p>${extra}${src}</div>
-        <div class="exp-actions">${actions}<button class="primary-btn" id="exp-next" type="button">Next experiment →</button></div>`;
+      const last = state.expIdx >= EXPERIMENTS.length - 1;
+      $('#exp-result').innerHTML = `<div class="verdict ${right ? 'right' : 'wrong'}"><h3 tabindex="-1" id="verdict-h">${right ? 'Right.' : 'Not quite.'}</h3><p><b>Why:</b> ${esc(lesson)}</p>${src}</div>
+        <div class="exp-actions"><button class="primary-btn" id="exp-next" type="button">${last ? 'See how you did' : 'Next question'}</button><button class="ghost-btn" id="exp-load" type="button">${showLabel}</button></div>`;
       $('#verdict-h').focus({ preventScroll: true });
-      
       $('#exp-next').onclick = () => { state.expIdx++; persist(); renderExp(true); };
       const ld = $('#exp-load');
       ld.onclick = () => {
         if (!state.myWeights) state.myWeights = Object.assign({}, state.weights);
         focusArena();
         setTimeout(() => applyWeights(loadWeights), REDUCED ? 0 : 300);
-        ld.outerHTML = '<button class="ghost-btn inline" id="exp-back" type="button">Back to my model</button>';
+        ld.outerHTML = '<button class="ghost-btn" id="exp-back" type="button">Put my settings back</button>';
         $('#exp-back').onclick = (e) => { applyWeights(state.myWeights); state.myWeights = null; e.target.remove(); };
       };
       expProgress();

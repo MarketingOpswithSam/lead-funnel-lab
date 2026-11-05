@@ -290,3 +290,31 @@ input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.12); }
 .legend-wrap { position: relative; }
 .stage.focusing .legend { visibility: hidden; }
 .focus-cap { position: absolute; inset: 0 0 auto 0; margin: 0 auto; width: fit-content; max-width: 100%; background: var(--ink); color: #fff; font-size: 13.5px; font-weight: 500; padding: 6px 14px; border-radius: 999px; text-align: center; pointer-events: none; animation: tipin 160ms var(--ease); }
+
+/* Experiments, plain-question version */
+#exp-progress { display: block; margin-top: 10px; font-size: 16px; }
+#exp-progress:empty { display: none; }
+.exp-dots { display: flex; gap: 6px; margin-bottom: 18px; }
+.exp-dots i { width: 28px; height: 4px; border-radius: 4px; background: var(--line); transition: background 300ms; }
+.exp-dots i.done { background: var(--c-sql); opacity: 0.45; }
+.exp-dots i.now { background: var(--brand); }
+.exp-step { font-size: 14px; font-weight: 600; color: var(--muted); }
+.exp-title { font-size: clamp(1.5rem, 3.2vw, 2rem); font-weight: 700; letter-spacing: -0.025em; line-height: 1.15; margin: 6px 0 12px; }
+.exp-title:focus { outline: none; }
+.exp-ask { font-size: 18px; line-height: 1.5; color: var(--ink); max-width: 60ch; }
+.exp-pick { font-size: 14px; font-weight: 600; color: var(--muted); margin: 24px 0 10px; }
+.choice { display: flex; flex-direction: column; gap: 10px; }
+.choice-label { font-size: 17px; font-weight: 600; }
+.choice-result:empty { display: none; }
+.r-num { font-size: 14.5px; color: var(--muted); font-weight: 400; }
+.r-num b { font-size: 28px; font-weight: 700; color: var(--ink); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; margin-right: 2px; }
+.r-bar { position: relative; display: block; height: 8px; border-radius: 8px; background: var(--band); overflow: visible; }
+.r-bar i { display: block; height: 100%; width: 0; border-radius: 8px; background: var(--c-neutral); transition: width 1100ms var(--ease); }
+.r-bar s { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--muted); border-radius: 2px; text-decoration: none; }
+.choice.winner .r-bar i { background: var(--c-sql); }
+.choice.winner { border-color: var(--c-sql); }
+.choice.winner .choice-label::after { content: "  ✓"; color: var(--c-sql); }
+.exp-how { font-size: 14px; color: var(--muted); line-height: 1.5; margin-top: 16px; max-width: 64ch; }
+.exp-how b { color: var(--ink); font-weight: 600; }
+.verdict p b { font-weight: 600; }
+.your-pick { align-self: flex-start; font-size: 12px; font-weight: 600; color: var(--brand); background: #efecf8; border-radius: 999px; padding: 2px 9px; margin-top: -4px; }
