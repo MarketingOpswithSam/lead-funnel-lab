@@ -150,6 +150,107 @@
     raf = requestAnimationFrame(() => { raf = 0; render(); persist(); });
   }
 
+
+  // ---------- Plain-language explanations ----------
+  const SOURCE_WHY = {
+    'Partner referral': 'A partner sends them with a known problem and a warm intro.',
+    'Website contact form': 'They came to you and asked to talk. Few signals are stronger.',
+    'Organic search': 'Searching for a fix. Some are buying, many are researching.',
+    'Webinar': 'Interested in the topic, which is not always the same as buying.',
+    'Paid LinkedIn': 'Ads target the right roles and companies, but the click is light intent.',
+    'Event booth': 'Badge scans and booth chats overstate interest. Many came for the coffee.',
+    'Content syndication': 'Downloaded a guide on someone else’s site. Mostly readers.',
+    'Outbound SDR': 'Right accounts, but you reached out to them, not the other way round.',
+  };
+  const SENIOR = { 'C-level': 1, VP: 1, Director: 1 };
+  const BIG = { '200–999': 1, '1,000–4,999': 1, '5,000+': 1 };
+
+  function intentPhrase(i) {
+    if (i >= 0.62) return 'live project with budget this quarter';
+    if (i >= 0.45) return 'comparing options, timing still open';
+    if (i >= 0.3) return 'early research, no project yet';
+    return 'no project, just reading';
+  }
+  function fitPlus(l) {
+    const out = [];
+    if (SENIOR[l.seniority]) out.push('a decision maker');
+    if (BIG[l.size]) out.push('right-sized company');
+    if (l.icp) out.push('target industry');
+    return out;
+  }
+  function fitMinus(l) {
+    const out = [];
+    if (l.seniority === 'Other' || l.seniority === 'Individual contributor') out.push('no buying authority');
+    else if (l.seniority === 'Manager') out.push('manager would need sign-off');
+    if (l.size === '1–49') out.push('too small for the offer');
+    return out;
+  }
+  function activityPhrase(l) {
+    const recent = l.events.filter((e) => e.daysAgo <= 30);
+    const n = (t) => recent.filter((e) => e.type === t).length;
+    const bits = [];
+    if (n('demo_request')) bits.push('asked for a demo');
+    if (n('pricing_page')) bits.push('viewed pricing' + (n('pricing_page') > 1 ? ' ' + n('pricing_page') + ' times' : ''));
+    if (n('event_meeting')) bits.push('met us at an event');
+    if (n('webinar_attend')) bits.push('joined a webinar');
+    if (bits.length) return bits.join(', ') + ' in the last 30 days';
+    if (!l.events.some((e) => e.type !== 'unsubscribe' && e.daysAgo <= 90)) return 'nothing in the last 90 days';
+    if (recent.length) return 'only email clicks, page visits or downloads lately';
+    return 'activity is more than a month old';
+  }
+  const cap = (x) => x.charAt(0).toUpperCase() + x.slice(1);
+
+  function leadReason(r, showMissed) {
+    const l = r.lead;
+    if (showMissed) {
+      const w = state.weights;
+      const maxFit = w.seniority + w.companySize + w.industry;
+      if (!r.engaged) return 'Would have bought: ' + intentPhrase(l.intent) + '. Held back because they hadn\u2019t touched any marketing in 90 days, so the score treats them as cold.';
+      const short = w.threshold - r.score;
+      const lowFit = maxFit > 0 && r.fit < 0.5 * maxFit;
+      const why = lowFit
+        ? 'the job title or company size scored low on fit (' + l.seniority.toLowerCase() + ', ' + l.size + ' staff)'
+        : 'their activity was light or old (' + activityPhrase(l) + ')';
+      return 'Would have bought: ' + intentPhrase(l.intent) + '. Missed the line by ' + short + (short === 1 ? ' point' : ' points') + ' because ' + why + '.';
+    }
+    if (r.sql) {
+      const plus = [];
+      if (l.intent >= 0.45) plus.push(intentPhrase(l.intent));
+      plus.push(...fitPlus(l));
+      return 'Took it: ' + (plus.length ? plus.join(', ') : 'enough fit to open a conversation') + '. Signal: ' + activityPhrase(l) + '.';
+    }
+    const minus = [];
+    if (l.intent < 0.45) minus.push(intentPhrase(l.intent));
+    minus.push(...fitMinus(l));
+    return 'Passed: ' + (minus.length ? minus.join(', ') : 'real interest, but they had just signed with another vendor') + '. Score came from: ' + activityPhrase(l) + '.';
+  }
+
+  function renderInsight(t, rows) {
+    const rate = pct(t.sql, t.mql);
+    let read;
+    if (!t.mql) read = 'Nothing reaches sales at this threshold. Lower it or raise the weights.';
+    else if (rate < 35) read = 'Most of what you send won’t turn into a conversation, and reps will start ignoring marketing leads.';
+    else if (rate >= 55) read = 'Sales will trust this list. Check the missed buyers, though: a strict bar keeps real buyers waiting in nurture.';
+    else read = 'That’s a workable balance. The score chart shows whether better weights could lift both numbers at once.';
+    $('#insight').innerHTML = t.mql
+      ? `Sales accepts <b>${Math.round(rate)} of every 100</b> leads you send (${fmt(t.sql)} of ${fmt(t.mql)}). Another <b>${fmt(t.missed)} buyers</b> were ready but never reached sales. ${read}`
+      : read;
+
+    const th = state.weights.threshold;
+    const band = rows.filter((r) => r.engaged && r.score < th && r.score >= th - 10);
+    const buyers = band.filter((r) => r.lead.salesReady).length;
+    $('#hist-note').textContent = band.length
+      ? `Just below the line (${th - 10} to ${th - 1} pts) there are ${fmt(band.length)} leads, and ${fmt(buyers)} of them are buyers. Dropping the threshold by 10 would add them at a ${pct(buyers, band.length).toFixed(0)}% hit rate, against ${rate.toFixed(0)}% for your current MQLs.`
+      : '';
+  }
+
+  function renderSourceNote(bySource) {
+    const ranked = bySource.filter((s) => s.mql >= 3).sort((a, b) => b.sql / b.mql - a.sql / a.mql);
+    if (ranked.length < 2) { $('#src-note').textContent = ''; return; }
+    const best = ranked[0], worst = ranked[ranked.length - 1];
+    $('#src-note').textContent = `${best.source} converts best at ${pct(best.sql, best.mql).toFixed(0)}%. ${worst.source} is weakest at ${pct(worst.sql, worst.mql).toFixed(0)}%. If a channel stays low, cut the points for the events it creates instead of raising the bar for every lead.`;
+  }
+
   // ---------- Rendering ----------
   function delta(el, now, base, opts) {
     const o = opts || {};
@@ -266,6 +367,7 @@
           <div class="rate-track"><div class="rate-fill" style="width:${r == null ? 0 : r.toFixed(1)}%"></div></div>
           <span class="rate-num">${r == null ? '<span class="dim">–</span>' : r.toFixed(0) + '%'}</span>
         </div></td>
+        <td class="src-why">${esc(SOURCE_WHY[s.source] || '')}</td>
       </tr>`;
     }).join('');
   }
@@ -285,11 +387,11 @@
       if (showMissed) outcome = r.engaged ? '<span class="pill rej">Below line</span>' : '<span class="pill rej">Gone quiet</span>';
       else outcome = r.sql ? '<span class="pill sql">SQL</span>' : '<span class="pill rej">Rejected</span>';
       return `<tr>
-        <td><div class="who">${esc(l.company)}<small>${esc(l.name)}, ${esc(l.title)}</small></div></td>
-        <td><div class="who">${esc(l.industry)}<small>${esc(l.size)} staff · ${esc(l.country)}</small></div></td>
+        <td><div class="who">${esc(l.company)}<small>${esc(l.name)}, ${esc(l.title)}</small><small>${esc(l.industry)} · ${esc(l.size)} staff · ${esc(l.country)}</small></div></td>
         <td>${esc(l.source)}</td>
         <td class="num"><b>${r.score}</b><br><span class="score-split">fit ${r.fit} · activity ${r.engagement}</span></td>
         <td>${outcome}</td>
+        <td class="reason">${esc(leadReason(r, showMissed))}</td>
       </tr>`;
     }).join('') : '<tr><td colspan="5" class="dim">No leads here with these settings.</td></tr>';
   }
@@ -297,6 +399,8 @@
   function render() {
     const res = evaluate(leads, state.weights);
     renderKpis(res.totals);
+    renderInsight(res.totals, res.rows);
+    renderSourceNote(res.bySource);
     renderFunnel(res.totals);
     renderHistogram(res.rows);
     renderSources(res.bySource);

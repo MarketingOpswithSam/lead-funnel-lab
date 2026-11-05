@@ -27,6 +27,8 @@ Everything updates as you drag:
 
 Each headline number also shows the change against the default model, so you can see the cost of a change as well as the gain.
 
+Every section explains itself in plain language. A summary under the headline numbers reads them back to you. The score chart tells you what lowering the threshold by 10 points would add, and how many of those leads would be buyers. Each lead source has a short note on why it converts the way it does. The leads table gives the reason sales took or passed on every MQL, and why each missed buyer was held back. Those reasons are built from the lead's hidden intent, its fit and its recent activity.
+
 ## How the sample data works
 
 `assets/leads.js` builds the leads from a seeded random number generator, so the same seed always gives the same 500 leads.
@@ -105,7 +107,7 @@ assets/app.js       sliders, charts and tables
 
 ## Changing it
 
-- **Brand colours** are the first few lines of `assets/styles.css`: `--brand` (main colour) and `--brand-2` (the MQL threshold), with matching dark-mode values just below. The font is Plus Jakarta Sans, loaded in `index.html`.
+- **Brand colours** are the first few lines of `assets/styles.css`: `--brand` (the accent colour) and `--brand-2` (the MQL threshold line), with matching dark-mode values just below. The font is DM Sans, loaded in `index.html`.
 - **Default weights and presets** are in `DEFAULT_WEIGHTS` and `PRESETS` in `assets/scoring.js`. Slider ranges and help text are in `CONTROLS` in the same file.
 - **Fit shares, event caps and the 90-day activity window** are constants at the top of `assets/scoring.js`.
 - **Lead sources, their share of volume and their base intent** are in `SOURCES` in `assets/leads.js`. Industries, seniority mix, countries and name pools sit next to it.
