@@ -213,6 +213,7 @@
       if (!key || !CTL[key]) return;
       state.weights[key] = clamp(Number(e.target.value), CTL[key].min, CTL[key].max);
       state.touched = true;
+      hideQuizbar();
       syncInputs();
       schedule();
       settleSoon(450);
@@ -236,6 +237,8 @@
     });
     document.querySelectorAll('[data-try]').forEach((b) => b.addEventListener('click', () => tryRule(b.dataset.try, b)));
     $('#ai-btn').addEventListener('click', aiTune);
+    $('#quizbar-back').addEventListener('click', restoreMine);
+    $('#quizbar-quiz').addEventListener('click', () => { const e = $('#exp-body'); const top = e.getBoundingClientRect().top + window.scrollY - 80; window.scrollTo({ top, behavior: REDUCED ? 'auto' : 'smooth' }); });
     $('#sources').addEventListener('click', (e) => { const r = e.target.closest('.src-row'); if (r) r.classList.toggle('open'); });
   }
 
@@ -801,6 +804,27 @@
     return `<div class="exp-dots" aria-hidden="true">${EXPERIMENTS.map((e, i) => `<i class="${i === state.expIdx ? 'now' : state.expDone.has(e.id) ? 'done' : ''}"></i>`).join('')}</div>`;
   }
 
+  function markWinner(body, actual, pick, tag) {
+    const w = body.querySelector(`[data-pick="${actual}"]`);
+    w.classList.add('winner');
+    w.querySelector('.choice-label').insertAdjacentHTML('afterend', `<span class="win-tag">${tag}</span>`);
+    if (pick !== actual) body.querySelector(`[data-pick="${pick}"]`).classList.add('wrong-pick');
+  }
+  function showChartTop() {
+    const qb = $('#quizbar');
+    const pinned = getComputedStyle(document.querySelector('.stage')).position === 'sticky';
+    const anchor = !pinned && qb && !qb.hidden ? qb : document.getElementById('play');
+    const top = anchor.getBoundingClientRect().top + window.scrollY - 64;
+    window.scrollTo({ top: Math.max(0, top), behavior: REDUCED ? 'auto' : 'smooth' });
+  }
+  function hideQuizbar() { const q = $('#quizbar'); if (q) q.hidden = true; }
+  function restoreMine() {
+    if (state.myWeights) applyWeights(state.myWeights);
+    state.myWeights = null;
+    hideQuizbar();
+    const b = $('#exp-back'); if (b) b.remove();
+  }
+
   function renderExp(focusFirst) {
     const body = $('#exp-body');
     expProgress();
@@ -834,7 +858,7 @@
     btn.classList.add('picked');
     btn.querySelector('.choice-label').insertAdjacentHTML('afterend', '<span class="your-pick">Your pick</span>');
     const SPEED = REDUCED ? 0 : 1100;
-    let right, actual, loadWeights, showLabel;
+    let right, actual, loadWeights, showLabel, quizNote = '';
     if (ex.kind === 'duel') {
       const A = topModel(ex.a.weights), B = topModel(ex.b.weights);
       actual = A.buyers >= B.buyers ? 'a' : 'b';
@@ -843,16 +867,17 @@
       ['a', 'b'].forEach((k) => {
         const m = k === 'a' ? A : B;
         $('#res-' + k).innerHTML = `<span class="r-num"><b id="num-${k}">0</b> of the top 100 are real buyers</span>
-          <span class="r-bar"><i id="bar-${k}"></i><s style="left:${random}%" title="A random pick"></s></span>`;
+          <span class="r-bar"><i id="bar-${k}"></i><s style="left:${random}%"><em>chance: ${random}</em></s></span>`;
         const n = $('#num-' + k); n._v = 0;
         tweenNum(n, m.buyers, (v) => Math.round(v), SPEED);
         requestAnimationFrame(() => requestAnimationFrame(() => { $('#bar-' + k).style.width = m.buyers + '%'; }));
       });
       const win = actual === 'a' ? A : B;
       loadWeights = Object.assign({}, ZERO, ex[actual].weights, { threshold: win.cut });
-      setTimeout(() => body.querySelector(`[data-pick="${actual}"]`).classList.add('winner'), SPEED);
-      body.querySelector('.exp-how').insertAdjacentHTML('beforeend', ` The thin line on each bar shows what a random pick of 100 leads would find (about ${random}).`);
-      showLabel = 'Show the winner on the chart';
+      setTimeout(() => markWinner(body, actual, pick, ex.kind === 'duel' ? 'Most buyers' : 'Right answer'), SPEED);
+      body.querySelector('.choices').insertAdjacentHTML('afterend', `<p class="exp-under">Picking 100 leads at random would find about ${random} real buyers.</p>`);
+      showLabel = 'See these 100 leads on the chart';
+      quizNote = `Showing question ${state.expIdx + 1}: ${ex[actual].label.toLowerCase()} only. Every other point value is set to 0, and the cut-off is placed so about 100 leads go to sales. One signal on its own scores low, so a low grade here is expected.`;
     } else {
       const before = metricOf(DEFAULT_WEIGHTS, ex.metric);
       loadWeights = Object.assign({}, DEFAULT_WEIGHTS, ex.patch);
@@ -860,12 +885,15 @@
       actual = after > before ? 'up' : 'down';
       right = pick === actual;
       const f = ex.metric === 'rate' ? (v) => Math.round(v) + '%' : fmt;
-      $('#res-' + actual).innerHTML = `<span class="r-num">${esc(ex.metricLabel)}: <b>${f(before)}</b> → <b id="dir-b">${f(before)}</b></span>`;
+      const totalBuyers = leads.filter((l) => l.salesReady).length;
+      body.querySelector('.choices').insertAdjacentHTML('afterend', `<p class="exp-under exp-dir">${esc(ex.metricLabel)}: <b>${f(before)}</b> → <b id="dir-b">${f(before)}</b>${ex.metric === 'missed' ? ` <span>(out of ${totalBuyers} real buyers)</span>` : ''}</p>`);
       const nb = $('#dir-b'); nb._v = before; tweenNum(nb, after, f, SPEED);
-      setTimeout(() => body.querySelector(`[data-pick="${actual}"]`).classList.add('winner'), SPEED);
-      showLabel = 'Show this on the chart';
+      setTimeout(() => markWinner(body, actual, pick, ex.kind === 'duel' ? 'Most buyers' : 'Right answer'), SPEED);
+      showLabel = 'See this cut-off on the chart';
+      quizNote = `Showing question ${state.expIdx + 1}: the default settings with the cut-off at ${ex.patch.threshold}.`;
     }
-    const ctx = { demoLeads: leads.filter((l) => l.events.some((e) => e.type === 'demo_request')).length, total: leads.length };
+    const demoers = leads.filter((l) => l.events.some((e) => e.type === 'demo_request'));
+    const ctx = { demoLeads: demoers.length, demoBuyers: demoers.filter((l) => l.salesReady).length, total: leads.length };
     const lessonText = typeof ex.lesson === 'function' ? ex.lesson(ctx) : ex.lesson;
     const lesson = actual === ex.expect ? lessonText : 'These 500 leads went against the usual pattern, which can happen with a small sample. Press "Shuffle leads" at the top and try this question again.';
     const src = ex.source && SOURCES[ex.source] ? `<p class="src">Source: <a href="${SOURCES[ex.source].url}" target="_blank" rel="noopener">${esc(SOURCES[ex.source].label)}</a></p>` : '';
@@ -879,10 +907,11 @@
       const ld = $('#exp-load');
       ld.onclick = () => {
         if (!state.myWeights) state.myWeights = Object.assign({}, state.weights);
-        focusArena();
-        setTimeout(() => applyWeights(loadWeights), REDUCED ? 0 : 300);
+        const qb = $('#quizbar'); $('#quizbar-text').textContent = quizNote; qb.hidden = false;
+        showChartTop();
+        setTimeout(() => applyWeights(loadWeights), REDUCED ? 0 : 350);
         ld.outerHTML = '<button class="ghost-btn" id="exp-back" type="button">Put my settings back</button>';
-        $('#exp-back').onclick = (e) => { applyWeights(state.myWeights); state.myWeights = null; e.target.remove(); };
+        $('#exp-back').onclick = () => restoreMine();
       };
       expProgress();
       persist();

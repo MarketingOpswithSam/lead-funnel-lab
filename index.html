@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="assets/styles.css?v=202611050436">
+<link rel="stylesheet" href="assets/styles.css?v=202611050446">
 </head>
 <body>
 <!--APP-START-->
@@ -36,6 +36,7 @@
         <li><b>2</b><span>Leads at or above the <em class="hl">cut-off score</em> (the purple line) become MQLs.</span></li>
         <li><b>3</b><span>MQLs go to sales. Everyone else stays with marketing.</span></li>
       </ol>
+      <div class="quizbar" id="quizbar" hidden><p id="quizbar-text"></p><div><button class="text-btn" id="quizbar-back" type="button">Put my settings back</button><button class="text-btn" id="quizbar-quiz" type="button">Back to the quiz</button></div></div>
       <div class="legend-wrap"><div class="legend" id="legend"></div><p class="focus-cap" id="focus-cap" hidden></p></div>
       <div class="mini" aria-label="Cut-off score">
         <span class="mini-grade" id="mini-grade">C</span>
@@ -89,7 +90,7 @@
   <section class="band" id="test" aria-labelledby="test-h">
     <div class="band-in">
       <h2 id="test-h">Test your instincts.</h2>
-      <p class="band-lede">Five quick questions about what makes a good lead. Guess the answer, then the lab works it out on the 500 leads above. <span id="exp-progress"></span></p>
+      <p class="band-lede">Five quick questions about what makes a good lead. Guess the answer, then the lab checks it on the 500 leads above. The leads are made up, but each one has a hidden answer: would sales want to take it on? We call those real buyers. The score can't see that answer, so the lab can check yours. <span id="exp-progress"></span></p>
       <div class="exp" id="exp-body"></div>
     </div>
   </section>
@@ -130,9 +131,9 @@
   </section>
 </main>
 <!--APP-END-->
-<script src="assets/leads.js?v=202611050436"></script>
-<script src="assets/scoring.js?v=202611050436"></script>
-<script src="assets/experiments.js?v=202611050436"></script>
-<script src="assets/app.js?v=202611050436"></script>
+<script src="assets/leads.js?v=202611050446"></script>
+<script src="assets/scoring.js?v=202611050446"></script>
+<script src="assets/experiments.js?v=202611050446"></script>
+<script src="assets/app.js?v=202611050446"></script>
 </body>
 </html>
