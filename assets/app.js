@@ -91,6 +91,7 @@
     const base = evaluate(leads, DEFAULT_WEIGHTS);
     baseline = base.totals;
     baseBest = bestLine(base.rows).best;
+    countSignals();
   }
 
   // ---------- Small motion helpers ----------
@@ -124,12 +125,67 @@
 
   // ---------- Controls ----------
   function ctlHtml(c) {
-    return `<div class="ctl">
+    return `<div class="ctl" data-ctl="${c.key}">
       <label for="w-${c.key}">${esc(c.label)}</label>
       <output id="o-${c.key}" for="w-${c.key}"></output>
-      <input type="range" id="w-${c.key}" data-key="${c.key}" min="${c.min}" max="${c.max}" step="${c.step}">
-      <small>${esc(c.hint)}</small>
+      <input type="range" id="w-${c.key}" data-key="${c.key}" min="${c.min}" max="${c.max}" step="${c.step}" aria-describedby="x-${c.key}">
+      <small class="say" id="x-${c.key}"></small>
+      <small class="reach" id="r-${c.key}"></small>
     </div>`;
+  }
+
+  // ---------- Plain-language slider help ----------
+  const EVENT_OF = { demoRequest: 'demo_request', eventMeeting: 'event_meeting', webinarAttend: 'webinar_attend', pricingPage: 'pricing_page', contentDownload: 'content_download', emailClick: 'email_click', webVisit: 'web_visit', unsubscribe: 'unsubscribe' };
+  const pts = (v) => Math.round(v) + (Math.round(v) === 1 ? ' point' : ' points');
+  const SAY = {
+    demoRequest: (v) => v ? `Asking for a demo adds ${pts(v)}.` : 'Asking for a demo adds nothing.',
+    eventMeeting: (v) => v ? `A conversation at an event booth adds ${pts(v)}.` : 'Event booth conversations add nothing.',
+    webinarAttend: (v) => v ? `Each webinar they attend adds ${pts(v)}, up to 3 webinars.` : 'Webinars add nothing.',
+    pricingPage: (v) => v ? `Each visit to your pricing page adds ${pts(v)}, up to 3 visits.` : 'Pricing page visits add nothing.',
+    contentDownload: (v) => v ? `Each guide or report they download adds ${pts(v)}, up to 3.` : 'Downloads add nothing.',
+    emailClick: (v) => v ? `Each email click adds ${pts(v)}, up to 3. Opens don\u2019t count.` : 'Email clicks add nothing.',
+    webVisit: (v) => v ? `Each page they visit adds ${pts(v)}, up to 10 pages.` : 'Page visits add nothing.',
+    unsubscribe: (v) => v ? `Unsubscribing takes away ${pts(-v)}.` : 'Unsubscribing costs nothing.',
+    seniority: (v) => v ? `A C-level contact gets ${pts(v)}, a director ${pts(v * 0.7)}, junior staff ${pts(v * 0.15)}.` : 'Job title adds nothing.',
+    companySize: (v) => v ? `Companies with 1,000 to 4,999 staff get ${pts(v)}. Under 50 staff get ${pts(v * 0.1)}.` : 'Company size adds nothing.',
+    industry: (v) => v ? `Financial services, healthcare, government and energy get ${pts(v)}. Other industries get ${pts(v * 0.3)}.` : 'Industry adds nothing.',
+    halfLife: (v) => `Activity loses half its points every ${v} days. After ${v * 2} days it\u2019s worth a quarter.`,
+  };
+  const HAS = {
+    seniority: (l) => l.seniority === 'C-level' || l.seniority === 'VP' || l.seniority === 'Director',
+    companySize: (l) => l.size === '1,000–4,999',
+    industry: (l) => l.icp,
+  };
+  Object.keys(EVENT_OF).forEach((k) => { HAS[k] = (l) => l.events.some((e) => e.type === EVENT_OF[k]); });
+  const WHO = {
+    seniority: (n) => `${n} of these leads are directors or above.`,
+    companySize: (n) => `${n} of these leads work at companies with 1,000 to 4,999 staff.`,
+    industry: (n) => `${n} of these leads are in a target industry.`,
+  };
+  let counts = {};
+  function countSignals() {
+    counts = {};
+    for (const k of Object.keys(HAS)) counts[k] = leads.reduce((n, l) => n + (HAS[k](l) ? 1 : 0), 0);
+  }
+  function sayFor(key) {
+    const v = state.weights[key], th = state.weights.threshold;
+    const x = document.getElementById('x-' + key), r = document.getElementById('r-' + key);
+    if (x) x.textContent = SAY[key] ? SAY[key](v) : '';
+    if (!r) return;
+    const parts = [];
+    if (key !== 'halfLife' && key !== 'unsubscribe' && v > 0) {
+      parts.push(v >= th ? 'On its own, that\u2019s enough to reach sales.' : `That\u2019s ${Math.round((100 * v) / th)}% of the way to the cut-off of ${th}.`);
+    }
+    if (counts[key] !== undefined) parts.push(WHO[key] ? WHO[key](counts[key]) : `${counts[key]} of ${leads.length} leads did this.`);
+    r.textContent = parts.join(' ');
+  }
+  const DID = { demoRequest: 'asked for a demo', eventMeeting: 'talked to you at an event', webinarAttend: 'attended a webinar', pricingPage: 'viewed your pricing page', contentDownload: 'downloaded a guide or report', emailClick: 'clicked an email', webVisit: 'visited your site', unsubscribe: 'unsubscribed', seniority: 'are directors or above', companySize: 'work at companies with 1,000 to 4,999 staff', industry: 'are in a target industry' };
+  let focusKey = null, focusTimer = 0;
+  function focusSignal(key) {
+    const k = key && HAS[key] ? key : null;
+    if (k === focusKey) return;
+    focusKey = k;
+    schedule();
   }
 
   function buildControls() {
@@ -138,9 +194,19 @@
     const rest = CONTROLS.filter((c) => c.key !== 'threshold');
     const groups = {};
     for (const c of rest) (groups[c.group] = groups[c.group] || []).push(c);
-    const names = { 'Engagement: what they did': 'Buying signals', 'Fit: who they are': 'Who they are', 'Handover and decay': 'Timing' };
+    const names = { 'Engagement: what they did': 'What they did', 'Fit: who they are': 'Who they are', 'Handover and decay': 'How fast points fade' };
     const order = ['Engagement: what they did', 'Fit: who they are', 'Handover and decay'];
     $('#controls').innerHTML = order.filter((g) => groups[g]).map((g) => `<p class="dock-label">${esc(names[g])}</p>${groups[g].map(ctlHtml).join('')}`).join('');
+    const ctls = $('#controls');
+    ctls.addEventListener('pointerover', (e) => { const c = e.target.closest('[data-ctl]'); if (c && e.pointerType === 'mouse') focusSignal(c.dataset.ctl); });
+    ctls.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') focusSignal(null); });
+    ctls.addEventListener('focusin', (e) => { const c = e.target.closest('[data-ctl]'); if (c) focusSignal(c.dataset.ctl); });
+    ctls.addEventListener('focusout', () => focusSignal(null));
+    ctls.addEventListener('pointerdown', (e) => {
+      const c = e.target.closest('[data-ctl]'); if (!c || e.pointerType === 'mouse') return;
+      focusSignal(c.dataset.ctl); clearTimeout(focusTimer);
+    });
+    ctls.addEventListener('pointerup', (e) => { if (e.pointerType !== 'mouse') { clearTimeout(focusTimer); focusTimer = setTimeout(() => focusSignal(null), 1600); } });
 
     document.addEventListener('input', (e) => {
       const key = e.target.dataset && e.target.dataset.key;
@@ -193,7 +259,8 @@
         el.style.setProperty('--fill', fill);
       }
       const o = document.getElementById('o-' + c.key);
-      if (o) o.textContent = c.key === 'threshold' ? v : (v > 0 && c.key !== 'halfLife' ? '+' : '') + v + ' ' + c.unit;
+      if (o) o.textContent = c.key === 'threshold' ? v : c.key === 'unsubscribe' && v < 0 ? '\u2212' + (-v) + ' pts' : v + ' ' + (c.unit === 'pts' && v === 1 ? 'pt' : c.unit);
+      if (c.key !== 'threshold') sayFor(c.key);
     }
     const om = $('#o-threshold-m'); if (om) om.textContent = state.weights.threshold;
     const active = Object.entries(PRESETS).find(([, p]) => Object.keys(p.weights).every((k) => p.weights[k] === state.weights[k]));
@@ -203,6 +270,7 @@
   function loadSample() {
     hideTip();
     loadLeads();
+    syncInputs();
     buildDots();
     stagger(true);
     lastSettledGrade = null;
@@ -300,6 +368,10 @@
 
   function renderArena(rows) {
     sizeArena();
+    svg.classList.toggle('focusing', !!focusKey);
+    const fc = $('#focus-cap');
+    document.querySelector('.stage').classList.toggle('focusing', !!focusKey);
+    if (fc) { fc.hidden = !focusKey; if (focusKey) fc.textContent = `Showing the ${counts[focusKey]} leads who ${DID[focusKey]}`; }
     layout = computeLayout(rows);
     const th = state.weights.threshold;
     const lx = layout.sx(Math.min(th, layout.xMax));
@@ -307,7 +379,7 @@
       const d = dotEls[i];
       const p = layout.pos[i];
       pos[i] = p;
-      d.setAttribute('class', 'dot ' + r.cat + (state.show[r.cat] ? '' : ' dim') + (i === hoverIdx ? ' hot' : ''));
+      d.setAttribute('class', 'dot ' + r.cat + (state.show[r.cat] ? '' : ' dim') + (i === hoverIdx ? ' hot' : '') + (focusKey && HAS[focusKey](r.lead) ? ' has' : ''));
       d.setAttribute('r', i === hoverIdx ? layout.rad + 2.5 : layout.rad);
       d.style.transform = `translate(${p.x.toFixed(1)}px, ${p.y.toFixed(1)}px)`;
     });

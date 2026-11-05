@@ -274,3 +274,19 @@ input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.12); }
 #swarm .line-g.hinting { animation: nudge 2.6s var(--ease) infinite; }
 @keyframes nudge { 0%, 60%, 100% { transform: translateX(0); } 70% { transform: translateX(10px); } 80% { transform: translateX(-6px); } 90% { transform: translateX(3px); } }
 @media (prefers-reduced-motion: reduce) { #swarm .line-g.hinting { animation: none; } }
+
+/* Slider help: a sentence that changes as you drag, and who it affects */
+#controls .ctl { padding: 12px 0; border-bottom: 1px solid var(--line); }
+#controls .ctl:last-child { border-bottom: 0; }
+#controls .ctl output { color: var(--brand); font-weight: 600; }
+.ctl .say { font-size: 13.5px; color: var(--ink); line-height: 1.4; margin-top: 2px; }
+.ctl .reach { font-size: 12.5px; color: var(--muted); line-height: 1.4; margin-top: 2px; }
+.ctl .reach:empty { display: none; }
+#controls .dock-label { font-size: 15px; font-weight: 600; color: var(--ink); margin: 22px 0 2px; }
+#controls .dock-label:first-child { margin-top: 0; }
+#controls .ctl:hover label, #controls .ctl:focus-within label { color: var(--brand); }
+#swarm.focusing .dot:not(.has) { opacity: 0.12; }
+#swarm.focusing .dot.has { stroke: var(--surface, #fff); stroke-width: 0.6; }
+.legend-wrap { position: relative; }
+.stage.focusing .legend { visibility: hidden; }
+.focus-cap { position: absolute; inset: 0 0 auto 0; margin: 0 auto; width: fit-content; max-width: 100%; background: var(--ink); color: #fff; font-size: 13.5px; font-weight: 500; padding: 6px 14px; border-radius: 999px; text-align: center; pointer-events: none; animation: tipin 160ms var(--ease); }
