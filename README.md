@@ -6,17 +6,18 @@ It's plain HTML, CSS and JavaScript. No build step, no backend, no dependencies 
 
 ## What you can do with it
 
-Lead Funnel Lab is a one-page game for B2B marketers. Every one of the 500 sample leads is a dot on a live chart, placed by its score.
+Lead Funnel Lab answers one question: who should sales call? Every one of the 500 sample leads is a dot on a live chart, placed by its score. Drag the purple line. Dots on the right get a call from sales.
 
-- **Drag the MQL line** across the chart, or move any weight, and watch the dots jump. Each dot is coloured by what happens to it: indigo for buyers sent to sales, coral for buyers missed, amber for wasted calls (MQLs sales rejects), grey for leads rightly left out. Hover a dot to meet the lead and see why sales took it or passed.
-- **Chase a model grade** from F to A+. The grade balances two meters: sales trust (share of MQLs sales accepts) and buyers caught (share of real buyers you sent). Push one too far and the other drops, so only better weights get you an A.
-- **Test hypotheses.** Five predict-then-reveal experiments, such as "pricing page views vs content downloads: which single signal finds more buyers in your top 100?" Every answer is computed live from the sample, so the reveal always matches what the lab shows.
-- **Unlock challenges** like "Trusted by sales" or "Beat the default", with confetti when you get there.
-- **Let the AI tune it.** One click runs a small optimiser that tries hundreds of weight changes against who really bought, live on the chart, then dares you to beat it by hand. It shows how predictive scoring learns, and how it can overfit when you shuffle the leads.
-- **Six rules of lead scoring**, each with a "Try it" button that moves the dots: room for only 50 calls, show only the real buyers, score on fit only, make signals fade fast, sweep the line, let the AI tune it.
-- **Meet your leads**: cards for buyers sent, buyers missed and wasted calls, each with the reason sales took it or passed. Hover a card to find its dot.
+- **A three-step mission** gets anyone started: drag the line, try a different scoring style, let the AI tune it.
+- **Two plain meters**: "Leads sales wanted" (sales trust, the MQL to SQL rate) and "Buyers you found" (the share of real buyers you sent).
+- **A model grade from F to A+** that compares your weights with the default model on the same sample. Moving the line alone can't raise it. A dashed "sweet spot" shows the best line for your current weights.
+- **Let the AI tune it** runs a small optimiser live on the chart, the way predictive scoring learns from won and lost deals. Then try to beat it by hand.
+- **Five predict-then-reveal experiments**, computed live from the sample, and **seven challenges** with confetti.
+- **Six rules, one tap each**: every rule has a "Try it" button that moves the dots.
+- **Three leads, three stories**: one buyer you nailed, one you missed, one wasted call, with a "Deal new leads" button.
+- **Where the buyers come from**: sales trust by lead source, with the reason each source behaves the way it does.
 
-Four scoring styles (Balanced, Fit first, Intent first, Content-heavy) give you a one-click starting point. Progress, best grade and settings are saved in your browser.
+The four scoring styles (Balanced, Fit first, Intent first, Content-heavy) sit under the chart. Every weight is in the "Fine-tune what counts" panel. Progress and settings are saved in your browser.
 
 ## How marketers can use it
 

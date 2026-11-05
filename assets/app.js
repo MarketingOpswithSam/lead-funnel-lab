@@ -22,10 +22,10 @@
   const gradeOf = (lift) => GRADES.find((g) => lift >= g[0])[1];
   const nextGrade = (lift) => { const i = GRADES.findIndex((g) => lift >= g[0]); return i > 0 ? GRADES[i - 1] : null; };
   const CAT = {
-    tp: { label: 'Buyers sent to sales', color: 'var(--c-sql)', ink: '#fff' },
-    fn: { label: 'Missed buyers', color: 'var(--c-missed)', ink: 'var(--ink)' },
+    tp: { label: 'Buyer, sent to sales', color: 'var(--c-sql)', ink: '#fff' },
+    fn: { label: 'Buyer, missed', color: 'var(--c-missed)', ink: 'var(--ink)' },
     fp: { label: 'Wasted calls', color: 'var(--c-wasted)', ink: 'var(--ink)' },
-    tn: { label: 'Rightly left out', color: 'var(--c-neutral)', ink: 'var(--ink)' },
+    tn: { label: 'Not a buyer', color: 'var(--c-neutral)', ink: 'var(--ink)' },
   };
   const CAT_ORDER = ['tp', 'fn', 'fp', 'tn'];
 
@@ -50,6 +50,7 @@
     expRight: saved.expRight || 0,
     expIdx: Number.isInteger(saved.expIdx) ? clamp(saved.expIdx, 0, EXPERIMENTS.length) : 0,
     touched: !!saved.touched,
+    quest: Object.assign({ drag: false, style: false, ai: false }, saved.quest || {}),
     table: 'tp',
     show: { tp: true, fn: true, fp: true, tn: true },
     myWeights: null,
@@ -58,7 +59,7 @@
     try {
       localStorage.setItem(STORE_KEY, JSON.stringify({
         seed: state.seed, weights: state.weights, bestLift: state.bestLift, badges: [...state.badges],
-        expDone: [...state.expDone], expRight: state.expRight, expIdx: state.expIdx, touched: state.touched,
+        expDone: [...state.expDone], expRight: state.expRight, expIdx: state.expIdx, touched: state.touched, quest: state.quest,
       }));
     } catch (e) { /* storage unavailable */ }
   }
@@ -184,7 +185,7 @@
       settleSoon(450);
     });
     document.addEventListener('change', (e) => { if (e.target.dataset && CTL[e.target.dataset.key]) settleSoon(0); });
-    document.querySelectorAll('[data-preset]').forEach((b) => b.addEventListener('click', () => applyWeights(PRESETS[b.dataset.preset].weights)));
+    document.querySelectorAll('[data-preset]').forEach((b) => b.addEventListener('click', () => { applyWeights(PRESETS[b.dataset.preset].weights); if (b.dataset.preset !== 'balanced') setTimeout(() => questDone('style'), 900); }));
     $('#reset').addEventListener('click', () => applyWeights(DEFAULT_WEIGHTS));
     $('#reseed').addEventListener('click', () => {
       state.seed = 1000 + Math.floor(Math.random() * 9000);
@@ -383,8 +384,10 @@
     const v = clamp(Math.round(layout.inv(x)), CTL.threshold.min, CTL.threshold.max);
     if (v !== state.weights.threshold) { state.weights.threshold = v; state.touched = true; syncInputs(); schedule(); }
   }
+  let dragFrom = null;
   function startDrag(e) {
     dragging = true;
+    dragFrom = state.weights.threshold;
     frozenXMax = layout.xMax;
     svg.classList.add('dragging', 'instant');
     try { svg.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
@@ -416,6 +419,7 @@
   const endDrag = () => {
     if (!dragging) return;
     dragging = false; frozenXMax = null;
+    if (dragFrom !== null && dragFrom !== state.weights.threshold) setTimeout(() => questDone('drag'), 700);
     svg.classList.remove('dragging', 'instant');
     schedule();
     settleSoon(0);
@@ -605,16 +609,6 @@
     tweenNum($('#m-caught'), recall, (v) => Math.round(v) + '%');
     $('#mf-trust').style.width = Math.min(100, rate) + '%';
     $('#mf-caught').style.width = Math.min(100, recall) + '%';
-    const wasted = t.mql - t.sql, bWasted = baseline.mql - baseline.sql;
-    const kp = [['mql', t.mql, baseline.mql, false], ['sql', t.sql, baseline.sql, false], ['wasted', wasted, bWasted, true], ['missed', t.missed, baseline.missed, true]];
-    for (const [k, v, b, lowerBetter] of kp) {
-      const el = $('#k-' + k);
-      if (booted && !dragging && el._v !== v) bump(el.parentElement);
-      tweenNum(el, v, fmt);
-      const d = v - b, de = $('#d-' + k);
-      if (!d) { de.textContent = 'same as default'; de.className = 'kpi-delta'; }
-      else { de.textContent = (d > 0 ? '▲ +' : '▼ ') + Math.abs(d) + ' vs default'; de.className = 'kpi-delta ' + ((lowerBetter ? d < 0 : d > 0) ? 'up' : 'down'); }
-    }
   }
 
   function renderLegend(rows) {
@@ -646,6 +640,7 @@
   }
 
   function renderFunnel(t) {
+    if (!$('#funnel')) return;
     const stages = [
       { name: 'All leads', note: 'sample', n: t.total },
       { name: 'Engaged', note: Math.round(pct(t.engaged, t.total)) + '% active lately', n: t.engaged },
@@ -921,14 +916,15 @@
       state.weights = Object.assign({}, w);
       syncInputs();
       schedule();
-      label.textContent = 'Training… ' + Math.round((100 * step) / STEPS) + '% · grade ' + gradeOf((best - baseBest) * 100);
+      label.textContent = 'Training… ' + Math.round((100 * step) / STEPS) + '% · grade ' + gradeOf(Math.round((best - baseBest) * 1000) / 10);
       if (step < STEPS) { setTimeout(tick, REDUCED ? 0 : 35); return; }
       tuning = false;
       btn.classList.remove('running');
       label.textContent = 'Run the AI again';
+      setTimeout(() => questDone('ai'), 1400);
       state.touched = true;
       const gained = best > start + 1e-6;
-      toast(gained ? `AI reached grade <b>${gradeOf((best - baseBest) * 100)}</b> by learning who sales took. Can you beat it by hand?` : 'The AI found nothing better from here. Your model was already strong.');
+      toast(gained ? `AI reached grade <b>${gradeOf(Math.round((best - baseBest) * 1000) / 10)}</b> by learning who sales took. Can you beat it by hand?` : 'The AI found nothing better from here. Your model was already strong.');
       setTimeout(() => {
         $('#insight').innerHTML = `<b>How the AI did it:</b> it tried ${STEPS * TRIES} small weight changes and kept the ${kept} that lifted the score, using who sales really took in this sample. Predictive scoring in HubSpot, Salesforce or Dynamics 365 works on the same idea, learning from your won and lost deals. It can also overfit: hit Shuffle leads and see if its weights still hold up.`;
       }, 60);
@@ -941,6 +937,23 @@
     $('#src-list').innerHTML = Object.values(SOURCES).map((s) => `<a class="ss-chip" href="${s.url}" target="_blank" rel="noopener" title="${esc(s.label)}">${esc(s.short || s.label)}</a>`).join('');
   }
 
+  // ---------- Mission ----------
+  function renderQuest() {
+    document.querySelectorAll('#quest [data-q]').forEach((li) => li.classList.toggle('done', !!state.quest[li.dataset.q]));
+    const all = state.quest.drag && state.quest.style && state.quest.ai;
+    $('#quest-done').hidden = !all;
+  }
+  function questDone(key) {
+    if (state.quest[key]) return;
+    state.quest[key] = true;
+    renderQuest();
+    const li = document.querySelector(`#quest [data-q="${key}"]`);
+    if (li && !REDUCED) { li.classList.remove('pop'); void li.offsetWidth; li.classList.add('pop'); }
+    if (state.quest.drag && state.quest.style && state.quest.ai) { toast('Mission complete. You\u2019re a lead-scoring pro!'); confetti(180); }
+    else toast('Nice! ' + ['drag', 'style', 'ai'].filter((k) => state.quest[k]).length + ' of 3 done');
+    persist();
+  }
+
   // ---------- Boot ----------
   loadLeads();
   buildControls();
@@ -948,7 +961,8 @@
   syncInputs();
   renderSourcesList();
   renderExp(false);
-  ['#k-mql', '#k-sql', '#k-wasted', '#k-missed', '#m-trust', '#m-caught'].forEach((s) => { $(s)._v = 0; });
+  renderQuest();
+  ['#m-trust', '#m-caught'].forEach((s) => { $(s)._v = 0; });
   void svg.getBoundingClientRect();
   requestAnimationFrame(() => {
     stagger(true);
