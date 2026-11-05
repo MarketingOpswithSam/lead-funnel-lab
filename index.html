@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Lead Funnel Lab</title>
-<meta name="description" content="Tune a B2B lead-scoring model against 500 sample leads and watch MQLs, SQLs and conversion by source update live.">
+<meta name="description" content="Play with a B2B lead-scoring model: drag the MQL line, watch 500 leads move, earn badges and test hypotheses about which signals find real buyers.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap">
@@ -12,148 +12,149 @@
 </head>
 <body>
 <!--APP-START-->
+<canvas id="confetti" aria-hidden="true"></canvas>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
 <header class="wrap top">
-  <div>
-    <div class="brandline">
-      <a href="https://marketingopswithsam.com" target="_blank" rel="noopener"><img src="assets/logo-small.png" alt="Marketing Ops with Sam" width="94" height="72"></a>
-      <span class="divider" aria-hidden="true"></span>
+  <div class="brandline">
+    <a href="https://marketingopswithsam.com" target="_blank" rel="noopener"><img src="assets/logo-small.png" alt="Marketing Ops with Sam" width="94" height="72"></a>
+    <span class="divider" aria-hidden="true"></span>
+    <div>
       <h1>Lead Funnel Lab</h1>
+      <p class="tag">Score 500 B2B leads. Drag the line. Find the buyers.</p>
     </div>
-    <p>Pick how you score leads, set the bar for an MQL, and see how many of those leads sales would actually take.</p>
   </div>
   <div class="sample">
-    <span>500 sample leads · seed <b id="seed">2611</b></span>
-    <button class="link-btn" id="reseed" type="button">Shuffle</button>
-    <button class="link-btn" id="seed-reset" type="button">Original</button>
+    <span>Sample <b id="seed">2611</b></span>
+    <button class="chip-btn" id="reseed" type="button">Shuffle leads</button>
   </div>
 </header>
 
 <main class="wrap page">
-  <section class="card about" aria-label="About this tool">
-    <div>
-      <h2>Where the data comes from</h2>
-      <p>None of it is real. Your browser makes up 500 B2B leads every time the page loads, shaped like a mid-market pipeline across Australia, the Netherlands, India, the UK, Singapore and New Zealand. Each lead has a company, a job title, a lead source and a history of activity: email clicks, page visits, webinars, event chats, pricing views and demo requests.</p>
-      <p>Each lead also has a hidden answer to "would sales take this?", based on how ready they are to buy and how well they fit. The score never sees that answer, the same way your marketing automation never hears what sales hears on the first call.</p>
+  <section class="scoreboard" aria-label="Scoreboard">
+    <div class="grade-card">
+      <div class="ring-box">
+        <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="ring-track" cx="60" cy="60" r="52"></circle>
+          <circle class="ring-fill" id="ring-fill" cx="60" cy="60" r="52"></circle>
+        </svg>
+        <div class="grade-inner">
+          <span class="grade-letter" id="grade">C</span>
+          <span class="grade-label">Model grade</span>
+        </div>
+      </div>
+      <p class="grade-best">Your best <b id="best-grade">C</b></p>
     </div>
-    <div>
-      <h2>How marketers can use it</h2>
-      <ul>
-        <li>Try a scoring change here before you make it in HubSpot, Marketo or Dynamics 365 Customer Insights, and see what it does to MQL volume and sales acceptance.</li>
-        <li>Open it in a sales and marketing meeting and agree on the MQL threshold together, with both teams watching the trade-off between more leads and better leads.</li>
-        <li>Use the missed buyers to make the case for SDR follow-up or a nurture track for leads sitting just under the line.</li>
-        <li>Check your channels. If one source keeps sending MQLs that sales turns down, give fewer points to what that channel creates.</li>
-        <li>To use your own data, export leads with their activity and the sales outcome from your CRM and swap them in. The README explains how.</li>
-      </ul>
+
+    <div class="meters">
+      <div class="meter">
+        <div class="meter-head"><span>Sales trust</span><b id="m-trust">0%</b></div>
+        <div class="meter-track"><div class="meter-fill trust" id="mf-trust"></div></div>
+        <small>Share of your MQLs that sales accepts</small>
+      </div>
+      <div class="meter">
+        <div class="meter-head"><span>Buyers caught</span><b id="m-caught">0%</b></div>
+        <div class="meter-track"><div class="meter-fill caught" id="mf-caught"></div></div>
+        <small>Share of real buyers you sent to sales</small>
+      </div>
+      <p class="grade-hint">Your grade needs both. Push one too far and the other drops.</p>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><span class="kpi-label"><i style="background:var(--c-mql)"></i>MQLs</span><b class="kpi-value" id="k-mql">0</b><span class="kpi-delta" id="d-mql"></span></div>
+      <div class="kpi"><span class="kpi-label"><i style="background:var(--c-sql)"></i>SQLs</span><b class="kpi-value" id="k-sql">0</b><span class="kpi-delta" id="d-sql"></span></div>
+      <div class="kpi"><span class="kpi-label"><i style="background:var(--c-wasted)"></i>Wasted calls</span><b class="kpi-value" id="k-wasted">0</b><span class="kpi-delta" id="d-wasted"></span></div>
+      <div class="kpi"><span class="kpi-label"><i style="background:var(--c-missed)"></i>Missed buyers</span><b class="kpi-value" id="k-missed">0</b><span class="kpi-delta" id="d-missed"></span></div>
     </div>
   </section>
 
-  <section class="card controls" aria-label="Scoring model">
-    <div>
-      <p class="step-label">1. Pick a scoring style</p>
-      <p class="why">A scoring style decides which signals count as interest. Some teams reward who the lead is, others reward what the lead did. Each style gives a different list to sales.</p>
+  <section class="play">
+    <aside class="dock card" aria-label="Scoring controls">
+      <p class="dock-label">Scoring style</p>
       <div class="presets" id="presets"></div>
-    </div>
 
-    <div class="threshold">
-      <label for="w-threshold">2. Set the MQL threshold</label>
-      <output id="o-threshold" for="w-threshold"></output>
-      <input type="range" id="w-threshold" data-key="threshold" min="10" max="150" step="1">
-      <small>Leads at or above this score go to sales. Lower it and sales gets more leads, but more of them won't be ready. Raise it and sales gets fewer, better leads, but some real buyers wait in nurture.</small>
-    </div>
-
-    <div>
-      <p class="step-label">3. Decide what counts most</p>
-      <p class="why">These three move the numbers most. A demo request is the clearest buying signal, pricing views come next, and seniority tells you if the person can sign. Drag them and watch who crosses the line.</p>
-      <div class="quick" id="quick"></div>
-    </div>
-
-    <details class="tune" id="tune">
-      <summary>All weights</summary>
-      <div class="tune-body">
-        <div class="tune-groups" id="controls"></div>
-        <div class="tune-foot"><button class="btn" id="reset" type="button">Reset to default</button></div>
+      <div class="ctl threshold">
+        <label for="w-threshold">MQL line</label>
+        <output id="o-threshold" for="w-threshold"></output>
+        <input type="range" id="w-threshold" data-key="threshold" min="10" max="150" step="1">
       </div>
-    </details>
-  </section>
 
-  <section class="kpis" aria-label="Headline numbers">
-    <div class="card kpi">
-      <span class="kpi-label"><i style="background:var(--c-mql)"></i>MQLs</span>
-      <span class="kpi-value" id="k-mql">0</span>
-      <span class="kpi-sub" id="k-mql-sub"></span>
-      <span class="kpi-delta" id="d-mql"></span>
-    </div>
-    <div class="card kpi">
-      <span class="kpi-label"><i style="background:var(--c-sql)"></i>SQLs</span>
-      <span class="kpi-value" id="k-sql">0</span>
-      <span class="kpi-sub" id="k-sql-sub"></span>
-      <span class="kpi-delta" id="d-sql"></span>
-    </div>
-    <div class="card kpi is-main">
-      <span class="kpi-label">MQL → SQL rate</span>
-      <span class="kpi-value" id="k-rate">0%</span>
-      <span class="kpi-sub" id="k-rate-sub"></span>
-      <span class="kpi-delta" id="d-rate"></span>
-    </div>
-    <div class="card kpi">
-      <span class="kpi-label"><i style="background:var(--c-missed)"></i>Missed buyers</span>
-      <span class="kpi-value" id="k-missed">0</span>
-      <span class="kpi-sub" id="k-missed-sub"></span>
-      <span class="kpi-delta" id="d-missed"></span>
+      <p class="dock-label">What counts most</p>
+      <div id="quick"></div>
+
+      <details class="more-weights">
+        <summary>All weights</summary>
+        <div id="controls"></div>
+      </details>
+      <button class="ghost-btn" id="reset" type="button">Reset to default</button>
+    </aside>
+
+    <div class="arena card">
+      <div class="arena-head">
+        <div>
+          <h2>Every dot is a lead</h2>
+          <p>Drag the line or move a slider and watch them jump. Hover a dot to meet the lead.</p>
+        </div>
+      </div>
+      <div class="legend" id="legend"></div>
+      <div class="swarm-wrap" id="swarm-wrap">
+        <svg id="swarm" viewBox="0 0 960 340" role="img" aria-label="500 leads plotted by score with the MQL line"></svg>
+        <div class="tip" id="tip" hidden></div>
+      </div>
+      <p class="arena-insight" id="insight" aria-live="polite"></p>
     </div>
   </section>
 
-  <p class="insight" id="insight" aria-live="polite"></p>
-
-  <div class="two-up">
-    <section class="card" aria-labelledby="funnel-h">
-      <div class="card-head">
-        <h2 id="funnel-h">Funnel</h2>
+  <section class="games">
+    <div class="card exp" aria-labelledby="exp-h">
+      <div class="exp-top">
+        <h2 id="exp-h">Test a hypothesis</h2>
+        <span class="pill-count" id="exp-progress"></span>
       </div>
-      <p class="why">Every step loses leads. The step sales feels is MQL to SQL, because each rejected MQL is a call that went nowhere and makes reps trust marketing leads a little less.</p>
+      <div id="exp-body"></div>
+    </div>
+
+    <div class="card badges-card" aria-labelledby="badges-h">
+      <div class="exp-top">
+        <h2 id="badges-h">Challenges</h2>
+        <span class="pill-count" id="badge-count"></span>
+      </div>
+      <div class="badges" id="badges"></div>
+    </div>
+  </section>
+
+  <section class="insights">
+    <div class="card">
+      <h2 class="h2">Funnel</h2>
       <div class="funnel" id="funnel"></div>
-    </section>
-
-    <section class="card hist" aria-labelledby="hist-h">
-      <div class="card-head">
-        <h2 id="hist-h">Score distribution</h2>
-        <p class="hint">Click the chart to move the MQL line</p>
-      </div>
-      <p class="why">Indigo and coral are leads sales would take: indigo ones reached sales, coral ones were held back. Grey are leads sales would pass on. A good model pushes buyers to the right of the line and grey to the left. Where the colours overlap, moving the line can't separate them. Changing the weights can.</p>
-      <div id="hist"></div>
-      <div class="legend">
-        <span><i class="sw-yes"></i>Buyers sent to sales</span>
-        <span><i class="sw-missed"></i>Buyers missed</span>
-        <span><i class="sw-no"></i>Sales would reject</span>
-      </div>
-      <p class="note" id="hist-note"></p>
-    </section>
-  </div>
-
-  <section class="card" aria-labelledby="src-h">
-    <div class="card-head">
-      <h2 id="src-h">Conversion by source</h2>
-      <p>Best MQL → SQL rate first</p>
     </div>
-    <p class="why">People arrive from each channel at different stages of buying. This shows which channels send buyers and which send readers, so you know where a lower or higher bar makes sense.</p>
-    <div class="table-scroll">
-      <table>
-        <thead><tr><th>Source</th><th class="num">Leads</th><th class="num">MQLs</th><th class="num">SQLs</th><th>MQL → SQL</th><th>Why it converts this way</th></tr></thead>
-        <tbody id="sources"></tbody>
-      </table>
+    <div class="card">
+      <h2 class="h2">Which sources send buyers</h2>
+      <p class="sub">MQL to SQL rate by lead source. Hover a row for why.</p>
+      <div class="sources" id="sources"></div>
     </div>
-    <p class="note" id="src-note"></p>
   </section>
 
-  <details class="card more">
-    <summary>See the leads, and why sales took them or passed</summary>
-    <p class="why">Sales decides on what they hear on the first call: is there a project, a budget, and someone who can sign? The score can only guess that from job title, company and clicks. Each row shows what sales found.</p>
+  <details class="card fold">
+    <summary>Lead scoring from first principles</summary>
+    <div class="principles">
+      <div><b>1</b><h3>Sales time is the scarce thing</h3><p>Reps spend only about 30% of their week selling (Salesforce, State of Sales). A Journal of Marketing study found about 70% of marketing leads were never followed up. Scoring decides who gets those few hours.</p></div>
+      <div><b>2</b><h3>A score is a bet</h3><p>It estimates how likely a lead is to buy soon. Forrester puts the share of leads that become customers below 1%, so most of your list should not go to sales.</p></div>
+      <div><b>3</b><h3>Fit says could, behaviour says now</h3><p>Role, size and industry tell you if they could buy. What they did lately tells you if they are buying now. Only about 5% of B2B buyers are in market at any time (Ehrenberg-Bass for the LinkedIn B2B Institute).</p></div>
+      <div><b>4</b><h3>Signals differ, and they fade</h3><p>A pricing visit last week beats a download last year. This lab ignores email opens, because Apple's Mail Privacy Protection (2021) made them unreliable.</p></div>
+      <div><b>5</b><h3>The line is a trade</h3><p>Move it right and sales trusts you more, but you miss buyers. Move it left and you catch more buyers, but waste calls. Only better weights improve both.</p></div>
+      <div><b>6</b><h3>AI learns the weights</h3><p>Predictive scoring does the same maths but learns the weights from your won and lost deals. Dynamics 365 Sales needs at least 40 qualified and 40 disqualified leads to train a model (Microsoft Learn).</p></div>
+    </div>
+  </details>
+
+  <details class="card fold" id="leads-fold">
+    <summary>See every lead and why sales took it or passed</summary>
     <div class="toggle">
-      <button class="btn" type="button" data-table="mql" aria-pressed="true">MQLs</button>
-      <button class="btn" type="button" data-table="missed" aria-pressed="false">Missed buyers</button>
+      <button class="chip-btn" type="button" data-table="mql" aria-pressed="true">MQLs</button>
+      <button class="chip-btn" type="button" data-table="missed" aria-pressed="false">Missed buyers</button>
     </div>
     <p class="lead-count" id="lead-count"></p>
-    <div class="table-scroll tall">
+    <div class="table-scroll">
       <table>
         <thead><tr><th>Company / contact</th><th>Source</th><th class="num">Score</th><th>Outcome</th><th>Why</th></tr></thead>
         <tbody id="leads"></tbody>
@@ -161,32 +162,26 @@
     </div>
   </details>
 
-  <details class="card more">
-    <summary>How scoring works</summary>
-    <div class="how">
+  <details class="card fold">
+    <summary>Where the data comes from, and sources</summary>
+    <div class="about">
       <div>
-        <h3>Score = fit + engagement</h3>
-        <p>Fit is who the lead is: role seniority, company size, and whether they're in a target industry (financial services, healthcare, government, energy &amp; utilities). Engagement is what they did, like requesting a demo, viewing pricing or attending a webinar.</p>
+        <p>None of the leads are real. Your browser makes up 500 B2B leads shaped like a mid-market pipeline across Australia, the Netherlands, India, the UK, Singapore and New Zealand. Each one has a company, a job title, a source and a history of activity.</p>
+        <p>Each lead also carries a hidden answer to "would sales take this?", based on how ready they are to buy and how well they fit. The score never sees it, just as your marketing automation never hears the first sales call. That's what makes it a fair test.</p>
+        <p>Use it to try a scoring change before you make it in HubSpot, Marketo or Dynamics 365, or open it in a sales and marketing meeting and agree on the MQL line together.</p>
       </div>
       <div>
-        <h3>Old activity fades</h3>
-        <p>An event loses half its points every half-life (30 days by default). Only the latest three of each event type count, ten for page visits, so clicking forty emails can't carry a lead. Unsubscribing takes points off in full.</p>
-      </div>
-      <div>
-        <h3>When a lead becomes an MQL</h3>
-        <p>Its score reaches the threshold and it has done something in the last 90 days. A perfect-fit account that has gone quiet stays in nurture.</p>
-      </div>
-      <div>
-        <h3>Where SQLs come from</h3>
-        <p>Each sample lead has a hidden flag for whether sales would accept it, based on real buying intent and fit. The score can only guess intent from behaviour, so the MQL → SQL rate shows how well your weights read it.</p>
+        <p class="src-note">Sources referenced on this page. They were found through research but not re-opened from this tool, so check the original before quoting a number.</p>
+        <ul class="src-list" id="src-list"></ul>
       </div>
     </div>
   </details>
 </main>
-<footer class="wrap foot">All companies and people are made up. Your settings are saved in this browser only.</footer>
+<footer class="wrap foot">Made by <a href="https://marketingopswithsam.com" target="_blank" rel="noopener">Marketing Ops with Sam</a>. All companies and people are made up. Your progress is saved in this browser only.</footer>
 <!--APP-END-->
 <script src="assets/leads.js"></script>
 <script src="assets/scoring.js"></script>
+<script src="assets/experiments.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>

@@ -6,28 +6,15 @@ It's plain HTML, CSS and JavaScript. No build step, no backend, no dependencies 
 
 ## What you can do with it
 
-- Drag the scoring weights for fit (seniority, company size, target industry) and engagement (demo requests, event meetings, webinars, pricing page views, content downloads, email clicks, web visits, unsubscribes).
-- Set the engagement half-life, which controls how fast old activity stops counting.
-- Set the MQL threshold.
-- Pick one of four scoring styles in one click: Balanced, Fit first, Intent first, and Content-heavy. The individual weights sit under "Fine-tune weights". The last one copies a pattern that shows up in a lot of real scoring models, where gated content and webinars carry most of the points.
-- Load a new random sample, or go back to the original one (seed 2611).
+Lead Funnel Lab is a one-page game for B2B marketers. Every one of the 500 sample leads is a dot on a live chart, placed by its score.
 
-Everything updates as you drag:
+- **Drag the MQL line** across the chart, or move any weight, and watch the dots jump. Each dot is coloured by what happens to it: indigo for buyers sent to sales, coral for buyers missed, amber for wasted calls (MQLs sales rejects), grey for leads rightly left out. Hover a dot to meet the lead and see why sales took it or passed.
+- **Chase a model grade** from F to A+. The grade balances two meters: sales trust (share of MQLs sales accepts) and buyers caught (share of real buyers you sent). Push one too far and the other drops, so only better weights get you an A.
+- **Test hypotheses.** Five predict-then-reveal experiments, such as "pricing page views vs content downloads: which single signal finds more buyers in your top 100?" Every answer is computed live from the sample, so the reveal always matches what the lab shows.
+- **Unlock challenges** like "Trusted by sales" or "Beat the default", with confetti when you get there.
+- **Read the first principles**: why scoring exists, what a score really is, why the line is a trade, and how AI scoring learns the weights. Sources are listed on the page.
 
-| Output | What it shows |
-| --- | --- |
-| MQLs | Leads at or above the threshold that were active in the last 90 days |
-| SQLs | MQLs the simulated sales team accepts |
-| MQL → SQL | SQLs divided by MQLs |
-| Missed buyers | Leads sales would have accepted that never became MQLs |
-| Funnel | All leads → engaged → MQL → SQL, drawn to scale |
-| Score distribution | Histogram of every lead's score, split by whether sales would accept it, with the threshold marked |
-| Conversion by source | Leads, MQLs, SQLs and MQL → SQL rate for each of the eight lead sources |
-| Leads table | Every MQL with its score split into fit and engagement, or every missed buyer |
-
-Each headline number also shows the change against the default model, so you can see the cost of a change as well as the gain.
-
-Every section explains itself in plain language. A summary under the headline numbers reads them back to you. The score chart tells you what lowering the threshold by 10 points would add, and how many of those leads would be buyers. Each lead source has a short note on why it converts the way it does. The leads table gives the reason sales took or passed on every MQL, and why each missed buyer was held back. Those reasons are built from the lead's hidden intent, its fit and its recent activity.
+Four scoring styles (Balanced, Fit first, Intent first, Content-heavy) give you a one-click starting point. Progress, best grade and settings are saved in your browser.
 
 ## How marketers can use it
 
@@ -124,7 +111,9 @@ index.html          page layout and the "How scoring works" panel
 assets/styles.css   styles and brand colours
 assets/leads.js     seeded sample lead generator
 assets/scoring.js   weights, presets, scoring and funnel maths
-assets/app.js       sliders, charts and tables
+assets/experiments.js  hypotheses, challenges and sources
+assets/app.js       arena, scoreboard, motion and game logic
+assets/logo*.png    Marketing Ops with Sam logo
 .nojekyll           turns off Jekyll on GitHub Pages
 ```
 
