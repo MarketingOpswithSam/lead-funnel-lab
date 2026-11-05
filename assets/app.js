@@ -111,49 +111,16 @@
     if (REDUCED || !el) return;
     el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
   }
-  let toastQueue = Promise.resolve();
+  // Feedback is a quiet line under the stats, not a pop-up.
+  let noteTimer = 0;
   function toast(html) {
-    toastQueue = toastQueue.then(() => new Promise((res) => {
-      const t = document.createElement('div');
-      t.className = 'toast';
-      t.setAttribute('role', 'status');
-      t.innerHTML = '<span class="star" aria-hidden="true">★</span><span>' + html + '</span>';
-      $('#toasts').appendChild(t);
-      setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 320); }, 2800);
-      setTimeout(res, 550);
-    }));
+    const n = $('#note'); if (!n) return;
+    n.innerHTML = html;
+    n.classList.remove('show'); void n.offsetWidth; n.classList.add('show');
+    clearTimeout(noteTimer);
+    noteTimer = setTimeout(() => { n.textContent = ''; }, 6000);
   }
-
-  const confettiCanvas = $('#confetti');
-  const cctx = confettiCanvas.getContext('2d');
-  let parts = [], confettiRaf = 0;
-  function confetti(amount) {
-    if (REDUCED) return;
-    const dpr = window.devicePixelRatio || 1;
-    confettiCanvas.width = innerWidth * dpr; confettiCanvas.height = innerHeight * dpr;
-    cctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const colors = ['#311e70', '#4f3bb0', '#d98e00', '#14a38b', '#e2553b', '#ffd36b'];
-    for (let i = 0; i < (amount || 140); i++) {
-      parts.push({
-        x: innerWidth / 2 + (Math.random() - 0.5) * innerWidth * 0.5, y: innerHeight * 0.35,
-        vx: (Math.random() - 0.5) * 12, vy: -Math.random() * 12 - 4, g: 0.32 + Math.random() * 0.1,
-        w: 6 + Math.random() * 6, h: 8 + Math.random() * 8, r: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3,
-        c: colors[i % colors.length], life: 0,
-      });
-    }
-    if (!confettiRaf) confettiRaf = requestAnimationFrame(tickConfetti);
-  }
-  function tickConfetti() {
-    cctx.clearRect(0, 0, innerWidth, innerHeight);
-    parts = parts.filter((p) => p.y < innerHeight + 40 && p.life < 240);
-    for (const p of parts) {
-      p.life++; p.vy += p.g; p.vx *= 0.99; p.x += p.vx; p.y += p.vy; p.r += p.vr;
-      cctx.save(); cctx.translate(p.x, p.y); cctx.rotate(p.r); cctx.fillStyle = p.c;
-      cctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h * Math.abs(Math.cos(p.life / 8))); cctx.restore();
-    }
-    confettiRaf = parts.length ? requestAnimationFrame(tickConfetti) : 0;
-    if (!parts.length) cctx.clearRect(0, 0, innerWidth, innerHeight);
-  }
+  function confetti() { /* intentionally calm: no confetti */ }
 
   // ---------- Controls ----------
   function ctlHtml(c) {
@@ -190,7 +157,7 @@
     $('#reseed').addEventListener('click', () => {
       state.seed = 1000 + Math.floor(Math.random() * 9000);
       loadSample();
-      toast('New sample of 500 leads. Same rules, new people.');
+      toast('New sample loaded: 500 different leads, same rules.');
     });
     $('#deal').addEventListener('click', () => { spotSeed++; renderLeadTable(true); });
     $('#spotlight').addEventListener('pointerover', (e) => { const c = e.target.closest('[data-lead]'); if (c) highlightDot(Number(c.dataset.lead)); });
@@ -572,7 +539,7 @@
         const before = gradeOf(state.bestLift);
         state.bestLift = model.lift;
         if (g !== before) {
-          toast(`New best: grade <b>${g}</b>, ${model.lift > 0 ? '+' : ''}${model.lift} vs the default model`);
+          toast(`Your best yet: grade ${g}, ${model.lift > 0 ? '+' : ''}${model.lift} points on the default model.`);
           if (g === 'A' || g === 'A+') confetti(100);
         }
       } else if (lastSettledGrade && g !== lastSettledGrade && GRADES.findIndex((x) => x[1] === g) > GRADES.findIndex((x) => x[1] === lastSettledGrade)) {
@@ -581,15 +548,16 @@
     }
     lastSettledGrade = g;
     const sweetNow = Math.abs(state.weights.threshold - model.bestTh) <= 2;
-    if (!opts.quiet && state.touched && sweetNow && !wasSweet) toast('Sweet spot! This is the best line for these weights.');
+    if (!opts.quiet && state.touched && sweetNow && !wasSweet) toast('You found the sweet spot for these weights.');
     wasSweet = sweetNow;
     checkBadges({ t, rate: current.rate, recall: current.recall, lift: model.lift, touched: state.touched, expsDone: state.expDone.size, sweet: sweetNow }, opts.quiet);
-    $('#best-grade').textContent = gradeOf(state.bestLift);
+    const bg = $('#best-grade'); if (bg) bg.textContent = gradeOf(state.bestLift);
     renderSources(current.bySource, true);
     renderLeadTable();
     persist();
   }
   function flashRing() {
+    if (!document.querySelector('.grade-card')) return;
     if (REDUCED) return;
     const c = document.querySelector('.grade-card');
     c.classList.remove('drop'); void c.offsetWidth; c.classList.add('drop');
@@ -601,8 +569,8 @@
     if (gl.textContent !== g) { gl.textContent = g; if (!REDUCED && booted) { gl.classList.remove('pop'); void gl.offsetWidth; gl.classList.add('pop'); } }
     const mg = $('#mini-grade'); if (mg) mg.textContent = g;
     const C = 2 * Math.PI * 52;
-    $('#ring-fill').style.strokeDashoffset = String(C * (1 - clamp((model.lift + 8) / 14, 0, 1)));
-    $('#grade-sub').textContent = `Model score ${Math.round(model.best * 100)} · default ${Math.round(baseBest * 100)}`;
+    const rf = $('#ring-fill'); if (rf) rf.style.strokeDashoffset = String(C * (1 - clamp((model.lift + 8) / 14, 0, 1)));
+    $('#grade-sub').textContent = `score ${Math.round(model.best * 100)}, default ${Math.round(baseBest * 100)}`;
     const nx = nextGrade(model.lift);
     $('#grade-next').textContent = nx ? `${nx[1]} at ${nx[0] > 0 ? '+' : ''}${nx[0]}` : 'top grade';
     tweenNum($('#m-trust'), rate, (v) => Math.round(v) + '%');
@@ -699,9 +667,9 @@
   function renderLeadTable(animate) {
     if (!current) return;
     const slots = [
-      { cat: 'tp', title: 'One you nailed', pill: 'Sent to sales', cls: 'sql' },
-      { cat: 'fn', title: 'One you missed', pill: 'Missed buyer', cls: 'missed' },
-      { cat: 'fp', title: 'One that wasted a call', pill: 'Wasted call', cls: 'rej' },
+      { cat: 'tp', title: 'A buyer you reached', pill: 'Sent to sales', cls: 'sql' },
+      { cat: 'fn', title: 'A buyer you missed', pill: 'Missed buyer', cls: 'missed' },
+      { cat: 'fp', title: 'A call sales didn\u2019t want', pill: 'Wasted call', cls: 'rej' },
     ];
     $('#spotlight').innerHTML = slots.map((sl, n) => {
       const list = current.rows.map((r, i) => ({ r, i })).filter((x) => x.r.cat === sl.cat);
@@ -714,13 +682,14 @@
         <span class="spot-who">${esc(l.name)}, ${esc(l.title)}</span>
         <span class="spot-meta"><span class="pill ${sl.cls}">${sl.pill}</span>Score ${r.score} · ${esc(l.source)}</span>
         <span class="spot-why">${esc(leadReason(r))}</span>
-        <span class="spot-go">Find on the chart →</span>
+        <span class="spot-go">See it on the chart</span>
       </button>`;
     }).join('');
   }
 
   // ---------- Badges ----------
   function renderBadges(justWon) {
+    if (!$('#badges')) return;
     const just = new Set(justWon || []);
     $('#badges').innerHTML = BADGES.map((b) => `<div class="badge${state.badges.has(b.id) ? ' won' : ''}${just.has(b.id) ? ' just' : ''}">
       <span class="medal" aria-hidden="true">★</span><div><b>${esc(b.title)}</b><small>${esc(b.desc)}</small></div></div>`).join('');
@@ -729,8 +698,8 @@
   function checkBadges(ctx, quiet) {
     const won = BADGES.filter((b) => !state.badges.has(b.id) && b.check(ctx));
     won.forEach((b) => state.badges.add(b.id));
-    if (won.length && !quiet) { won.forEach((b) => toast('Challenge complete: <b>' + esc(b.title) + '</b>')); confetti(); }
-    if (won.length || !$('#badges').children.length) renderBadges(won.map((b) => b.id));
+
+    if ($('#badges') && (won.length || !$('#badges').children.length)) renderBadges(won.map((b) => b.id));
   }
 
   // ---------- Experiments ----------
@@ -820,7 +789,7 @@
       $('#exp-result').innerHTML = `<div class="verdict ${right ? 'right' : 'wrong'}"><h3 tabindex="-1" id="verdict-h">${right ? 'You called it!' : 'Not this time.'}</h3><p>${esc(lesson)}</p>${extra}${src}</div>
         <div class="exp-actions">${actions}<button class="primary-btn" id="exp-next" type="button">Next experiment →</button></div>`;
       $('#verdict-h').focus({ preventScroll: true });
-      if (right) { toast('Correct! ' + state.expRight + ' right so far'); confetti(60); }
+      
       $('#exp-next').onclick = () => { state.expIdx++; persist(); renderExp(true); };
       const ld = $('#exp-load');
       ld.onclick = () => {
@@ -850,20 +819,20 @@
       const sorted = current.rows.filter((r) => r.engaged).map((r) => r.score).sort((a, b) => b - a);
       const cut = sorted[Math.min(49, sorted.length - 1)] || 1;
       applyWeights(Object.assign({}, state.weights, { threshold: cut }));
-      setTimeout(() => toast('Room for about 50 calls this week. These are the leads that get them.'), 500);
+      setTimeout(() => toast('If sales only has time for about 50 calls, these are the leads that get them.'), 500);
     } else if (kind === 'buyers') {
       const only = !(state.show.fp === false && state.show.tn === false);
       state.show = { tp: true, fn: true, fp: !only, tn: !only };
       document.querySelectorAll('#legend [data-cat]').forEach((b) => b.setAttribute('aria-pressed', String(state.show[b.dataset.cat])));
       btn.textContent = only ? 'Show everyone again' : 'Try it: show only real buyers';
-      if (only) toast('These are the only leads sales would take. Everything else is noise.');
+      if (only) toast('These are the only leads sales would take. Everything else is hidden.');
       schedule();
     } else if (kind === 'fit') {
       applyWeights(Object.assign({}, DEFAULT_WEIGHTS, { demoRequest: 0, eventMeeting: 0, webinarAttend: 0, pricingPage: 0, contentDownload: 0, emailClick: 0, webVisit: 0, unsubscribe: 0, threshold: 30 }));
-      setTimeout(() => toast('Fit only: right companies, but no idea who is buying now. Watch the coral.'), 500);
+      setTimeout(() => toast('Scoring on job title and company alone. Watch how many coral dots get left behind.'), 500);
     } else if (kind === 'fade') {
       applyWeights(Object.assign({}, DEFAULT_WEIGHTS, { halfLife: 7 }));
-      setTimeout(() => toast('A 7-day half-life: last month barely counts. See who drops back.'), 500);
+      setTimeout(() => toast('Activity now loses half its value every 7 days. Last month barely counts.'), 500);
     } else if (kind === 'sweep') {
       if (sweeping) return;
       const start = state.weights.threshold;
@@ -879,7 +848,7 @@
         state.weights.threshold = path[k++]; syncInputs(); schedule();
         if (k >= path.length) {
           clearInterval(sweeping); sweeping = 0; frozenXMax = null; svg.classList.remove('instant');
-          toast('Left: more buyers, more wasted calls. Right: fewer wasted calls, more missed buyers.');
+          toast('Further left reaches more buyers and wastes more calls. Further right does the opposite.');
           schedule(); settleSoon(200);
         }
       }, REDUCED ? 1 : 28);
@@ -916,17 +885,18 @@
       state.weights = Object.assign({}, w);
       syncInputs();
       schedule();
-      label.textContent = 'Training… ' + Math.round((100 * step) / STEPS) + '% · grade ' + gradeOf(Math.round((best - baseBest) * 1000) / 10);
+      label.textContent = 'Trying weights… ' + Math.round((100 * step) / STEPS) + '%';
       if (step < STEPS) { setTimeout(tick, REDUCED ? 0 : 35); return; }
       tuning = false;
       btn.classList.remove('running');
-      label.textContent = 'Run the AI again';
+      label.textContent = 'Try again';
       setTimeout(() => questDone('ai'), 1400);
+      wasSweet = true;
       state.touched = true;
       const gained = best > start + 1e-6;
-      toast(gained ? `AI reached grade <b>${gradeOf(Math.round((best - baseBest) * 1000) / 10)}</b> by learning who sales took. Can you beat it by hand?` : 'The AI found nothing better from here. Your model was already strong.');
+      toast(gained ? `The computer reached grade ${gradeOf(Math.round((best - baseBest) * 1000) / 10)} by learning from who sales took. Try to beat it by hand.` : 'The computer found nothing better from here. Your weights were already strong.');
       setTimeout(() => {
-        $('#insight').innerHTML = `<b>How the AI did it:</b> it tried ${STEPS * TRIES} small weight changes and kept the ${kept} that lifted the score, using who sales really took in this sample. Predictive scoring in HubSpot, Salesforce or Dynamics 365 works on the same idea, learning from your won and lost deals. It can also overfit: hit Shuffle leads and see if its weights still hold up.`;
+        $('#insight').innerHTML = `<b>What the computer did:</b> it tried ${STEPS * TRIES} small weight changes and kept the ${kept} that lifted the score, using who sales really took in this sample. Predictive scoring in HubSpot, Salesforce or Dynamics 365 works on the same idea, learning from your won and lost deals. It can also overfit: hit Shuffle leads and see if its weights still hold up.`;
       }, 60);
       settleSoon(100);
     };
@@ -939,12 +909,13 @@
 
   // ---------- Mission ----------
   function renderQuest() {
+    if (!$('#quest')) return;
     document.querySelectorAll('#quest [data-q]').forEach((li) => li.classList.toggle('done', !!state.quest[li.dataset.q]));
     const all = state.quest.drag && state.quest.style && state.quest.ai;
     $('#quest-done').hidden = !all;
   }
   function questDone(key) {
-    if (state.quest[key]) return;
+    if (state.quest[key] || !$('#quest')) return;
     state.quest[key] = true;
     renderQuest();
     const li = document.querySelector(`#quest [data-q="${key}"]`);

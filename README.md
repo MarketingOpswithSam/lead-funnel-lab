@@ -6,18 +6,14 @@ It's plain HTML, CSS and JavaScript. No build step, no backend, no dependencies 
 
 ## What you can do with it
 
-Lead Funnel Lab answers one question: who should sales call? Every one of the 500 sample leads is a dot on a live chart, placed by its score. Drag the purple line. Dots on the right get a call from sales.
+Lead Funnel Lab answers one question: who should sales call? The 500 sample leads sit on one chart as dots, placed by score. Drag the line. Leads on the right go to sales.
 
-- **A three-step mission** gets anyone started: drag the line, try a different scoring style, let the AI tune it.
-- **Two plain meters**: "Leads sales wanted" (sales trust, the MQL to SQL rate) and "Buyers you found" (the share of real buyers you sent).
-- **A model grade from F to A+** that compares your weights with the default model on the same sample. Moving the line alone can't raise it. A dashed "sweet spot" shows the best line for your current weights.
-- **Let the AI tune it** runs a small optimiser live on the chart, the way predictive scoring learns from won and lost deals. Then try to beat it by hand.
-- **Five predict-then-reveal experiments**, computed live from the sample, and **seven challenges** with confetti.
-- **Six rules, one tap each**: every rule has a "Try it" button that moves the dots.
-- **Three leads, three stories**: one buyer you nailed, one you missed, one wasted call, with a "Deal new leads" button.
-- **Where the buyers come from**: sales trust by lead source, with the reason each source behaves the way it does.
-
-The four scoring styles (Balanced, Fit first, Intent first, Content-heavy) sit under the chart. Every weight is in the "Fine-tune what counts" panel. Progress and settings are saved in your browser.
+- Two numbers tell you how you're doing: the share of the leads you send that sales wants (sales trust, the MQL to SQL rate) and the share of real buyers who get a call.
+- A model grade from F to A+ compares your weights with the default model on the same leads. Moving the line alone can't raise it. A dashed sweet spot shows the best line for your current weights.
+- "Find better weights for me" tries hundreds of small weight changes against who sales actually took, live on the chart, the way predictive scoring learns from won and lost deals.
+- "Test what you believe" walks through five common beliefs about scoring. You make a call, the lab checks it against the sample.
+- "Six things worth knowing" pairs a sourced number with a button that shows it on the chart.
+- "Where the buyers come from" shows sales trust by lead source, and "Three leads from this sample" tells the story of one buyer reached, one missed and one call sales didn't want.
 
 ## How marketers can use it
 

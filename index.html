@@ -4,172 +4,130 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Lead Funnel Lab</title>
-<meta name="description" content="Play with a B2B lead-scoring model: drag the MQL line, watch 500 leads move, earn badges and test hypotheses about which signals find real buyers.">
+<meta name="description" content="500 made-up B2B leads on one chart. Drag the line to decide who gets a sales call and see how many real buyers you reach.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap">
-<link rel="stylesheet" href="assets/styles.css?v=202611050406">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="assets/styles.css?v=202611050420">
 </head>
 <body>
 <!--APP-START-->
-<canvas id="confetti" aria-hidden="true"></canvas>
-<div class="toasts" id="toasts" aria-live="polite"></div>
-
-<header class="wrap top">
-  <div class="brandline">
-    <a href="https://marketingopswithsam.com" target="_blank" rel="noopener"><img src="assets/logo-small.png" alt="Marketing Ops with Sam" width="94" height="72"></a>
-    <span class="divider" aria-hidden="true"></span>
-    <div>
-      <h1>Lead Funnel Lab</h1>
-      <p class="tag">Who should sales call? Drag the line and find out.</p>
+<nav class="nav" aria-label="Lead Funnel Lab">
+  <div class="nav-in">
+    <a class="nav-brand" href="https://marketingopswithsam.com" target="_blank" rel="noopener"><img src="assets/logo-small.png" alt="Marketing Ops with Sam" width="37" height="28"></a>
+    <span class="nav-title">Lead Funnel Lab</span>
+    <div class="nav-links">
+      <a href="#play">Play</a><a href="#test">Test</a><a href="#learn">Learn</a><a href="#sources-sec">Sources</a>
     </div>
+    <button class="nav-btn" id="reseed" type="button">Shuffle leads</button>
   </div>
-  <div class="sample">
-    <span>Sample <b id="seed">2611</b></span>
-    <button class="chip-btn" id="reseed" type="button">Shuffle leads</button>
-  </div>
+</nav>
+
+<header class="hero">
+  <h1>Who should sales call?</h1>
+  <p class="lede">Here are 500 made-up B2B leads, one dot each, placed by score. Some of them would buy. The score can't tell which. Drag the line and see who ends up in front of sales.</p>
 </header>
 
-<main class="wrap page">
-  <section class="scoreboard" aria-label="Scoreboard">
-    <div class="grade-card">
-      <div class="ring-box">
-        <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
-          <circle class="ring-track" cx="60" cy="60" r="52"></circle>
-          <circle class="ring-fill" id="ring-fill" cx="60" cy="60" r="52"></circle>
-        </svg>
-        <div class="grade-inner">
-          <span class="grade-letter" id="grade">C</span>
-          <span class="grade-label">Model grade</span>
-        </div>
-      </div>
-      <p class="grade-sub" id="grade-sub">Model score 0 · default 0</p>
-      <p class="grade-best">Your best <b id="best-grade">C</b> · <span id="grade-next"></span></p>
-    </div>
-
-    <div class="meters">
-      <div class="meter">
-        <div class="meter-head"><span>Leads sales wanted</span><b id="m-trust">0%</b></div>
-        <div class="meter-track"><div class="meter-fill trust" id="mf-trust"></div></div>
-        <small>Of the leads you send, how many sales wants (sales trust)</small>
-      </div>
-      <div class="meter">
-        <div class="meter-head"><span>Buyers you found</span><b id="m-caught">0%</b></div>
-        <div class="meter-track"><div class="meter-fill caught" id="mf-caught"></div></div>
-        <small>Of all the real buyers, how many you sent to sales</small>
-      </div>
-      <p class="grade-hint">Your grade goes up when you find a smarter way to score, not just by moving the line.</p>
-    </div>
-
-    <div class="quest" aria-label="Your mission">
-      <p class="quest-h">Your mission</p>
-      <ol class="quest-list" id="quest">
-        <li data-q="drag"><span class="tick" aria-hidden="true"></span>Drag the purple line on the chart</li>
-        <li data-q="style"><span class="tick" aria-hidden="true"></span>Try a different scoring style</li>
-        <li data-q="ai"><span class="tick" aria-hidden="true"></span>Press "Let the AI tune it"</li>
-      </ol>
-      <p class="quest-done" id="quest-done" hidden>You're a lead-scoring pro. Now beat the AI by hand.</p>
-    </div>
-  </section>
-
-  <section class="play">
-    <aside class="dock card" aria-label="Scoring controls">
-      <p class="dock-title">Fine-tune what counts</p>
-      <div class="ctl threshold">
-        <label for="w-threshold">MQL line</label>
-        <output id="o-threshold" for="w-threshold"></output>
-        <input type="range" id="w-threshold" data-key="threshold" min="10" max="150" step="1">
-      </div>
-
-      <div id="controls"></div>
-      <button class="ghost-btn" id="reset" type="button">Reset to default</button>
-    </aside>
-
-    <div class="arena card">
-      <div class="arena-head">
-        <div>
-          <h2>Every dot is a lead</h2>
-          <p>Drag the purple line. Dots on the right get a call from sales. Hover or tap a dot to meet that lead.</p>
-        </div>
-        <button class="ai-btn" id="ai-btn" type="button"><span class="spark" aria-hidden="true">✦</span><span id="ai-label">Let the AI tune it</span></button>
-      </div>
-      <div class="mini" aria-label="Quick controls">
+<main>
+  <section class="play" id="play" aria-label="Play">
+    <div class="stage arena">
+      <div class="legend" id="legend"></div>
+      <div class="mini" aria-label="MQL line">
         <span class="mini-grade" id="mini-grade">C</span>
         <label for="w-threshold-m">MQL line <b id="o-threshold-m">45</b></label>
         <input type="range" id="w-threshold-m" data-key="threshold" min="1" max="150" step="1">
       </div>
-      <div class="legend" id="legend"></div>
       <div class="swarm-wrap" id="swarm-wrap">
         <svg id="swarm" viewBox="0 0 960 340" role="img" aria-label="500 leads plotted by score with the MQL line"></svg>
         <div class="tip" id="tip" hidden></div>
       </div>
-      <div class="style-row"><span class="style-label">Scoring style</span><div class="presets" id="presets"></div></div>
-      <p class="arena-insight" id="insight"></p>
+
+      <div class="stats">
+        <div class="stat">
+          <b id="m-trust">0%</b>
+          <span>of the leads you send are ones sales wants</span>
+          <i class="bar"><i id="mf-trust"></i></i>
+        </div>
+        <div class="stat">
+          <b id="m-caught">0%</b>
+          <span>of the real buyers get a call</span>
+          <i class="bar"><i id="mf-caught"></i></i>
+        </div>
+        <div class="stat grade">
+          <b id="grade">C</b>
+          <span>model grade, <em id="grade-sub">score 0, default 0</em>. Next: <em id="grade-next"></em></span>
+        </div>
+      </div>
+      <p class="note" id="note" aria-live="polite"></p>
+      <p class="insight" id="insight"></p>
+    </div>
+
+    <aside class="panel" aria-label="Scoring controls">
+      <p class="panel-h">Start from</p>
+      <div class="segmented" id="presets"></div>
+
+      <div class="ctl ctl-line">
+        <label for="w-threshold">MQL line</label>
+        <output id="o-threshold" for="w-threshold"></output>
+        <input type="range" id="w-threshold" data-key="threshold" min="1" max="150" step="1">
+        <small>Leads at or above this score go to sales.</small>
+      </div>
+
+      <button class="solid-btn" id="ai-btn" type="button"><span id="ai-label">Find better weights for me</span></button>
+
+      <p class="panel-h">What earns points</p>
+      <div id="controls"></div>
+      <button class="text-btn" id="reset" type="button">Reset to default</button>
+    </aside>
+  </section>
+
+  <section class="band" id="test" aria-labelledby="test-h">
+    <div class="band-in">
+      <h2 id="test-h">Test what you believe.</h2>
+      <p class="band-lede">Five ideas most marketers hold about scoring. Make a call on each, and the lab checks it against this sample. <span id="exp-progress"></span></p>
+      <div class="exp" id="exp-body"></div>
     </div>
   </section>
 
-  <section class="games">
-    <div class="card exp" aria-labelledby="exp-h">
-      <div class="exp-top">
-        <h2 id="exp-h">Test a hypothesis</h2>
-        <span class="pill-count" id="exp-progress"></span>
-      </div>
-      <div id="exp-body"></div>
-    </div>
-
-    <div class="card badges-card" aria-labelledby="badges-h">
-      <div class="exp-top">
-        <h2 id="badges-h">Challenges</h2>
-        <span class="pill-count" id="badge-count"></span>
-      </div>
-      <div class="badges" id="badges"></div>
+  <section class="learn" id="learn" aria-labelledby="learn-h">
+    <h2 id="learn-h">Six things worth knowing.</h2>
+    <div class="facts">
+      <div class="fact"><b>30%</b><p>of a rep's week goes on selling, according to Salesforce's State of Sales. Scoring decides who gets that time.</p><button class="link-btn" type="button" data-try="capacity">Show the top 50 leads</button></div>
+      <div class="fact"><b>&lt;1%</b><p>of leads become customers, by Forrester's count. Most of your list should never reach sales.</p><button class="link-btn" type="button" data-try="buyers">Show only real buyers</button></div>
+      <div class="fact"><b>5%</b><p>of B2B buyers are in market at any time (Ehrenberg-Bass for the LinkedIn B2B Institute). Job titles say who could buy. Recent activity says who is buying.</p><button class="link-btn" type="button" data-try="fit">Score on job title only</button></div>
+      <div class="fact"><b>2021</b><p>is when Apple's Mail Privacy Protection made email opens unreliable. Fresh, specific signals like a pricing visit last week matter more.</p><button class="link-btn" type="button" data-try="fade">Make old activity fade fast</button></div>
+      <div class="fact"><b>±</b><p>Moving the line is a trade. Right gives sales fewer wasted calls and you more missed buyers. Left does the opposite.</p><button class="link-btn" type="button" data-try="sweep">Sweep the line</button></div>
+      <div class="fact"><b>40 + 40</b><p>won and lost leads is the minimum Dynamics 365 Sales needs to train predictive scoring (Microsoft Learn). It learns the weights instead of you setting them.</p><button class="link-btn" type="button" data-try="ai">Let the computer try</button></div>
     </div>
   </section>
 
-  <section class="insights">
-    <div class="card">
-      <h2 class="h2">Where the buyers come from</h2>
-      <p class="sub">How many of each source's leads sales wanted (MQL to SQL rate). Tap a row for why.</p>
+  <section class="band" aria-labelledby="src-h">
+    <div class="band-in">
+      <h2 id="src-h">Where the buyers come from.</h2>
+      <p class="band-lede">How many of each source's MQLs sales wanted. Tap a row to see why.</p>
       <div class="sources" id="sources"></div>
     </div>
   </section>
 
-  <section class="card rules" aria-labelledby="rules-h">
-    <div class="exp-top"><h2 id="rules-h">Six rules, one tap each</h2><span class="pill-count">Tap "Try it" and watch the dots</span></div>
-    <div class="principles">
-      <div><b>1</b><h3>Sales time is precious</h3><p>Reps spend only about 30% of their week selling (Salesforce). Scoring decides who gets that time.</p><button class="try-btn" type="button" data-try="capacity">Try it: room for 50 calls</button></div>
-      <div><b>2</b><h3>Most leads won't buy</h3><p>Fewer than 1 in 100 leads become customers (Forrester). Don't send them all to sales.</p><button class="try-btn" type="button" data-try="buyers">Try it: show only real buyers</button></div>
-      <div><b>3</b><h3>Who they are vs what they do</h3><p>The right job title says they could buy. Recent activity says they're buying now.</p><button class="try-btn" type="button" data-try="fit">Try it: score on fit only</button></div>
-      <div><b>4</b><h3>Fresh beats old</h3><p>A pricing visit last week beats a download last year. Email opens don't count here (Apple, 2021).</p><button class="try-btn" type="button" data-try="fade">Try it: make signals fade fast</button></div>
-      <div><b>5</b><h3>The line is a trade</h3><p>Move it right: happier sales, more missed buyers. Left: the opposite.</p><button class="try-btn" type="button" data-try="sweep">Try it: sweep the line</button></div>
-      <div><b>6</b><h3>AI learns the scoring</h3><p>Predictive scoring learns from your won and lost deals instead of rules you set (Microsoft Learn).</p><button class="try-btn" type="button" data-try="ai">Try it: let the AI tune it</button></div>
-    </div>
-  </section>
-
-  <section class="card meet" aria-labelledby="meet-h">
-    <div class="exp-top">
-      <h2 id="meet-h">Three leads, three stories</h2>
-      <button class="chip-btn" id="deal" type="button">Deal new leads</button>
+  <section class="people" aria-labelledby="meet-h">
+    <div class="people-head">
+      <h2 id="meet-h">Three leads from this sample.</h2>
+      <button class="text-btn" id="deal" type="button">Show three others</button>
     </div>
     <div class="spotlight" id="spotlight"></div>
   </section>
 
-  <section class="fineprint" aria-label="About this lab">
-    <div class="fp-tile"><span class="fp-big">500</span><h3>Made-up leads</h3><p>Fictional companies across Australia, the Netherlands, India, the UK, Singapore and New Zealand, each with a job title, source and activity history.</p></div>
-    <div class="fp-tile"><span class="fp-big">?</span><h3>A hidden sales verdict</h3><p>Every lead secretly knows if sales would take it. The score never sees that answer, just like your marketing automation never hears the first sales call.</p></div>
-    <div class="fp-tile"><span class="fp-big">↺</span><h3>Test before you change</h3><p>Get a feel for how a scoring change behaves before you try it on your own data in HubSpot, Marketo or Dynamics 365, or play it live in your next sales and marketing meeting.</p></div>
-  </section>
-  <section class="sources-strip" aria-label="Sources">
-    <span class="ss-label">Sources</span>
-    <span id="src-list" class="ss-chips"></span>
-    <span class="ss-note">Found through research. Check the original before quoting a number.</span>
+  <section class="fine" id="sources-sec" aria-labelledby="fine-h">
+    <h2 id="fine-h">About the data</h2>
+    <p>The 500 leads are invented: companies across Australia, the Netherlands, India, the UK, Singapore and New Zealand, each with a job title, a source and a history of activity. Every lead also carries a hidden answer to "would sales take this?", based on how ready they are to buy and how well they fit. The score never sees that answer, the same way your marketing automation never hears the first sales call. Use the lab to get a feel for a scoring change before you try it on real data in HubSpot, Marketo or Dynamics 365.</p>
+    <p class="src-line">Sources, found through research. Check the original before quoting a number: <span id="src-list"></span></p>
+    <p class="credit">Made by <a href="https://marketingopswithsam.com" target="_blank" rel="noopener">Marketing Ops with Sam</a>. Sample <span id="seed">2611</span>. Your settings stay in this browser.</p>
   </section>
 </main>
-<footer class="wrap foot">Made by <a href="https://marketingopswithsam.com" target="_blank" rel="noopener">Marketing Ops with Sam</a>. All companies and people are made up. Your progress is saved in this browser only.</footer>
 <!--APP-END-->
-<script src="assets/leads.js?v=202611050406"></script>
-<script src="assets/scoring.js?v=202611050406"></script>
-<script src="assets/experiments.js?v=202611050406"></script>
-<script src="assets/app.js?v=202611050406"></script>
+<script src="assets/leads.js?v=202611050420"></script>
+<script src="assets/scoring.js?v=202611050420"></script>
+<script src="assets/experiments.js?v=202611050420"></script>
+<script src="assets/app.js?v=202611050420"></script>
 </body>
 </html>
