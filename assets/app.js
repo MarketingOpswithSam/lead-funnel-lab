@@ -7,6 +7,18 @@
   const LEAD_COUNT = 500;
   const STORE_KEY = 'lead-funnel-lab:v1';
 
+  const PRESET_BLURBS = {
+    balanced: 'A bit of everything',
+    fit: 'Right company, right role',
+    intent: 'Buying signals count most',
+    content: 'Rewards downloads and webinars',
+  };
+  const GROUP_NAMES = {
+    'Fit: who they are': 'Who they are',
+    'Engagement: what they did': 'What they did',
+    'Handover and decay': 'Timing',
+  };
+
   const $ = (sel) => document.querySelector(sel);
   const fmt = (n) => n.toLocaleString('en-AU');
   const pct = (a, b) => (b > 0 ? (100 * a) / b : 0);
@@ -29,42 +41,54 @@
 
   // ---------- Controls ----------
   function buildControls() {
-    const host = $('#controls');
+    $('#presets').innerHTML = Object.entries(PRESETS).map(([k, p]) => `
+      <button class="preset" type="button" data-preset="${k}" aria-pressed="false">
+        <b>${esc(p.label.replace(/ \(.*\)$/, ''))}</b>
+        <small>${esc(PRESET_BLURBS[k] || '')}</small>
+      </button>`).join('');
+    document.querySelectorAll('[data-preset]').forEach((b) => b.addEventListener('click', () => {
+      state.weights = Object.assign({}, PRESETS[b.dataset.preset].weights);
+      syncInputs();
+      schedule();
+    }));
+
     const groups = [];
     for (const c of CONTROLS) {
-      let g = groups.find((x) => x.name === c.group);
-      if (!g) { g = { name: c.group, items: [] }; groups.push(g); }
+      if (c.key === 'threshold') continue;
+      const name = GROUP_NAMES[c.group] || c.group;
+      let g = groups.find((x) => x.name === name);
+      if (!g) { g = { name, items: [] }; groups.push(g); }
       g.items.push(c);
     }
-    host.innerHTML = groups.map((g) => `
-      <fieldset>
-        <legend>${esc(g.name)}</legend>
+    // Show fit first, then engagement, then timing.
+    const order = ['Who they are', 'What they did', 'Timing'];
+    groups.sort((a, b) => order.indexOf(a.name) - order.indexOf(b.name));
+    // Put timing under fit so the three columns balance.
+    const fitGroup = groups.find((g) => g.name === 'Who they are');
+    const timing = groups.find((g) => g.name === 'Timing');
+    const engagement = groups.find((g) => g.name === 'What they did');
+    const half = Math.ceil(engagement.items.length / 2);
+    const columns = [
+      [fitGroup, timing],
+      [{ name: 'What they did', items: engagement.items.slice(0, half) }],
+      [{ name: ' ', items: engagement.items.slice(half) }],
+    ];
+    $('#controls').innerHTML = columns.map((col) => `<div class="group">${col.map((g) => `
+        <h3>${esc(g.name)}</h3>
         ${g.items.map((c) => `
-          <div class="ctl${c.key === 'threshold' ? ' is-threshold' : ''}">
+          <div class="ctl">
             <label for="w-${c.key}">${esc(c.label)}</label>
             <output id="o-${c.key}" for="w-${c.key}"></output>
             <input type="range" id="w-${c.key}" data-key="${c.key}" min="${c.min}" max="${c.max}" step="${c.step}" />
             <small>${esc(c.hint)}</small>
-          </div>`).join('')}
-      </fieldset>`).join('');
+          </div>`).join('')}`).join('')}</div>`).join('');
 
-    host.addEventListener('input', (e) => {
+    document.addEventListener('input', (e) => {
       const key = e.target.dataset && e.target.dataset.key;
       if (!key) return;
       state.weights[key] = Number(e.target.value);
-      $('#preset').value = matchPreset();
+      syncPreset();
       syncOutputs();
-      schedule();
-    });
-
-    const presetSel = $('#preset');
-    presetSel.innerHTML = Object.entries(PRESETS).map(([k, p]) => `<option value="${k}">${esc(p.label)}</option>`).join('') +
-      '<option value="custom" hidden>Custom</option>';
-    presetSel.addEventListener('change', () => {
-      const p = PRESETS[presetSel.value];
-      if (!p) return;
-      state.weights = Object.assign({}, p.weights);
-      syncInputs();
       schedule();
     });
 
@@ -73,7 +97,6 @@
       syncInputs();
       schedule();
     });
-
     $('#reseed').addEventListener('click', () => {
       state.seed = 1000 + Math.floor(Math.random() * 9000);
       loadSample();
@@ -82,7 +105,6 @@
       state.seed = DEFAULT_SEED;
       loadSample();
     });
-
     document.querySelectorAll('[data-table]').forEach((b) => b.addEventListener('click', () => {
       state.table = b.dataset.table;
       render();
@@ -99,19 +121,25 @@
     for (const [k, p] of Object.entries(PRESETS)) {
       if (Object.keys(p.weights).every((key) => p.weights[key] === state.weights[key])) return k;
     }
-    return 'custom';
+    return null;
+  }
+
+  function syncPreset() {
+    const active = matchPreset();
+    document.querySelectorAll('[data-preset]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.preset === active)));
   }
 
   function syncInputs() {
     for (const c of CONTROLS) $('#w-' + c.key).value = state.weights[c.key];
-    $('#preset').value = matchPreset();
+    syncPreset();
     syncOutputs();
   }
 
   function syncOutputs() {
     for (const c of CONTROLS) {
       const v = state.weights[c.key];
-      const sign = c.key === 'unsubscribe' || c.key === 'halfLife' || c.key === 'threshold' ? '' : '+';
+      if (c.key === 'threshold') { $('#o-threshold').textContent = v + ' pts'; continue; }
+      const sign = c.key === 'unsubscribe' || c.key === 'halfLife' ? '' : '+';
       $('#o-' + c.key).textContent = (v > 0 ? sign : '') + v + ' ' + c.unit;
     }
   }
@@ -126,44 +154,43 @@
   function delta(el, now, base, opts) {
     const o = opts || {};
     const d = now - base;
-    if (Math.abs(d) < (o.eps || 0.5)) { el.textContent = 'same as default model'; el.className = 'kpi-delta'; return; }
+    if (Math.abs(d) < (o.eps || 0.5)) { el.textContent = ''; el.className = 'kpi-delta'; return; }
     const good = o.lowerIsBetter ? d < 0 : d > 0;
     const shown = o.points ? d.toFixed(1).replace(/\.0$/, '') + ' pts' : fmt(Math.round(d));
-    el.textContent = (d > 0 ? '+' : '') + shown + ' vs default model';
+    el.textContent = (d > 0 ? '▲ +' : '▼ ') + shown.replace('-', '−') + ' vs default';
     el.className = 'kpi-delta ' + (good ? 'up' : 'down');
   }
 
   function renderKpis(t) {
     const rate = pct(t.sql, t.mql);
-    const baseRate = pct(baseline.sql, baseline.mql);
     $('#k-mql').textContent = fmt(t.mql);
-    $('#k-mql-sub').textContent = pct(t.mql, t.total).toFixed(1) + '% of all leads';
+    $('#k-mql-sub').textContent = pct(t.mql, t.total).toFixed(0) + '% of all leads';
     $('#k-sql').textContent = fmt(t.sql);
     $('#k-sql-sub').textContent = 'accepted by sales';
-    $('#k-rate').textContent = t.mql ? rate.toFixed(1) + '%' : '–';
+    $('#k-rate').textContent = t.mql ? rate.toFixed(0) + '%' : '–';
     $('#k-rate-sub').textContent = fmt(t.mql - t.sql) + ' MQLs rejected';
     $('#k-missed').textContent = fmt(t.missed);
-    $('#k-missed-sub').textContent = 'of ' + fmt(t.salesReady) + ' sales-ready leads never handed over';
+    $('#k-missed-sub').textContent = 'ready to buy, never sent to sales';
     delta($('#d-mql'), t.mql, baseline.mql);
     delta($('#d-sql'), t.sql, baseline.sql);
-    delta($('#d-rate'), rate, baseRate, { points: true, eps: 0.05 });
+    delta($('#d-rate'), rate, pct(baseline.sql, baseline.mql), { points: true, eps: 0.05 });
     delta($('#d-missed'), t.missed, baseline.missed, { lowerIsBetter: true });
   }
 
   function renderFunnel(t) {
     const stages = [
-      { name: 'All leads', note: 'sample set', n: t.total, rate: null },
-      { name: 'Engaged', note: 'active in last 90 days', n: t.engaged, rate: pct(t.engaged, t.total) },
-      { name: 'MQL', note: 'score ≥ ' + state.weights.threshold, n: t.mql, rate: pct(t.mql, t.engaged) },
-      { name: 'SQL', note: 'accepted by sales', n: t.sql, rate: pct(t.sql, t.mql) },
+      { name: 'All leads', note: 'sample set', n: t.total },
+      { name: 'Engaged', note: pct(t.engaged, t.total).toFixed(0) + '% active in 90 days', n: t.engaged },
+      { name: 'MQL', note: pct(t.mql, t.engaged).toFixed(0) + '% of engaged', n: t.mql },
+      { name: 'SQL', note: pct(t.sql, t.mql).toFixed(0) + '% of MQLs', n: t.sql },
     ];
     $('#funnel').innerHTML = stages.map((s, i) => {
       const w = pct(s.n, t.total);
       return `
         <div class="stage">
           <div class="stage-name">${s.name}<small>${esc(s.note)}</small></div>
-          <div class="stage-track"><div class="stage-bar${w < 12 ? ' is-narrow' : ''}" data-stage="${i}" style="width:${w.toFixed(2)}%">${fmt(s.n)}</div></div>
-          <div class="stage-rate">${i === 0 ? '<b>' + fmt(s.n) + '</b>100%' : '<b>' + fmt(s.n) + '</b>' + s.rate.toFixed(0) + '% step'}</div>
+          <div class="stage-track"><div class="stage-bar" data-stage="${i}" style="width:${w.toFixed(2)}%"></div></div>
+          <div class="stage-count">${fmt(s.n)}</div>
         </div>`;
     }).join('');
   }
@@ -188,40 +215,37 @@
     }
     const yMax = niceMax(Math.max(...bins.map((b) => b.yes + b.no)));
 
-    const W = 640, H = 250, m = { l: 38, r: 14, t: 26, b: 30 };
+    const W = 560, H = 250, m = { l: 34, r: 10, t: 28, b: 28 };
     const pw = W - m.l - m.r, ph = H - m.t - m.b;
     const x = (v) => m.l + (v / xMax) * pw;
     const y = (v) => m.t + ph - (v / yMax) * ph;
 
-    const yTicks = [0, yMax / 4, yMax / 2, (3 * yMax) / 4, yMax];
+    const yTicks = [0, yMax / 2, yMax];
     const xStep = xMax <= 60 ? 10 : xMax <= 160 ? 20 : 50;
     const xTicks = [];
     for (let v = 0; v <= xMax; v += xStep) xTicks.push(v);
 
     let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Score distribution of ${rows.length} leads with MQL threshold at ${th}">`;
     svg += '<g class="grid">' + yTicks.map((v) => `<line x1="${m.l}" x2="${W - m.r}" y1="${y(v)}" y2="${y(v)}"/>`).join('') + '</g>';
-    svg += yTicks.map((v) => `<text x="${m.l - 6}" y="${y(v) + 4}" text-anchor="end">${Math.round(v)}</text>`).join('');
-    svg += xTicks.map((v) => `<text x="${x(v)}" y="${H - m.b + 16}" text-anchor="middle">${v}</text>`).join('');
-    svg += `<text x="${W - m.r}" y="${H - 2}" text-anchor="end">score</text>`;
-    svg += `<text x="${m.l - 6}" y="${m.t - 12}" text-anchor="end">leads</text>`;
+    svg += yTicks.map((v) => `<text x="${m.l - 8}" y="${y(v) + 4}" text-anchor="end">${Math.round(v)}</text>`).join('');
+    svg += xTicks.map((v) => `<text x="${x(v)}" y="${H - m.b + 18}" text-anchor="middle">${v}</text>`).join('');
 
-    const gap = 1.5;
+    const gap = 2;
     for (const b of bins) {
       const total = b.yes + b.no;
       if (!total) continue;
       const bx = x(b.x0) + gap / 2;
       const bw = Math.max(1, x(b.x0 + binW) - x(b.x0) - gap);
       const below = b.x0 + binW <= th ? ' below' : '';
-      const title = `<title>${b.x0}–${b.x0 + binW - 1} pts: ${b.yes} sales-ready, ${b.no} not</title>`;
+      const title = `<title>${b.x0}–${b.x0 + binW - 1} pts: ${b.yes} sales would accept, ${b.no} would reject</title>`;
       svg += `<g class="bin${below}">${title}` +
-        `<rect class="bar-yes" x="${bx}" y="${y(b.yes)}" width="${bw}" height="${y(0) - y(b.yes)}"/>` +
-        `<rect class="bar-no" x="${bx}" y="${y(total)}" width="${bw}" height="${y(b.yes) - y(total)}"/></g>`;
+        `<rect class="bar-yes" x="${bx}" y="${y(b.yes)}" width="${bw}" height="${y(0) - y(b.yes)}" rx="1.5"/>` +
+        `<rect class="bar-no" x="${bx}" y="${y(total)}" width="${bw}" height="${y(b.yes) - y(total)}" rx="1.5"/></g>`;
     }
-    svg += `<line class="axis" x1="${m.l}" x2="${W - m.r}" y1="${y(0)}" y2="${y(0)}"/>`;
     const tx = x(th);
-    const anchor = tx > W - 120 ? 'end' : 'start';
-    svg += `<line class="thresh" x1="${tx}" x2="${tx}" y1="${m.t - 6}" y2="${y(0)}"/>`;
-    svg += `<text class="thresh-label" x="${anchor === 'start' ? tx + 6 : tx - 6}" y="${m.t + 4}" text-anchor="${anchor}">MQL ≥ ${th}</text>`;
+    const anchor = tx > W - 140 ? 'end' : 'start';
+    svg += `<line class="thresh" x1="${tx}" x2="${tx}" y1="${m.t - 10}" y2="${y(0)}" stroke-linecap="round"/>`;
+    svg += `<text class="thresh-label" x="${anchor === 'start' ? tx + 7 : tx - 7}" y="${m.t - 2}" text-anchor="${anchor}">MQL line: ${th} pts</text>`;
     svg += '</svg>';
     $('#hist').innerHTML = svg;
   }
@@ -236,11 +260,11 @@
       return `<tr>
         <td>${esc(s.source)}</td>
         <td class="num">${fmt(s.leads)}</td>
-        <td class="num">${fmt(s.mql)} <span class="dim">(${pct(s.mql, s.leads).toFixed(0)}%)</span></td>
+        <td class="num">${fmt(s.mql)}</td>
         <td class="num">${fmt(s.sql)}</td>
         <td><div class="rate-cell">
           <div class="rate-track"><div class="rate-fill" style="width:${r == null ? 0 : r.toFixed(1)}%"></div></div>
-          <span class="rate-num">${r == null ? '<span class="dim">no MQLs</span>' : r.toFixed(0) + '%'}</span>
+          <span class="rate-num">${r == null ? '<span class="dim">–</span>' : r.toFixed(0) + '%'}</span>
         </div></td>
       </tr>`;
     }).join('');
@@ -253,26 +277,21 @@
       .filter((r) => (showMissed ? !r.mql && r.lead.salesReady : r.mql))
       .sort((a, b) => b.score - a.score);
     $('#lead-count').textContent = showMissed
-      ? fmt(list.length) + ' sales-ready leads the model left below the line'
-      : fmt(list.length) + ' leads handed to sales, highest score first';
-    const lastEvent = (l) => {
-      const e = l.events.find((x) => x.type !== 'unsubscribe');
-      return e ? e.daysAgo + 'd ago' : 'never';
-    };
+      ? fmt(list.length) + ' leads sales would have taken, but the score kept them back'
+      : fmt(list.length) + ' leads sent to sales, highest score first';
     $('#leads').innerHTML = list.length ? list.map((r) => {
       const l = r.lead;
       let outcome;
-      if (showMissed) outcome = r.engaged ? '<span class="pill rej">Below threshold</span>' : '<span class="pill rej">Inactive 90d+</span>';
+      if (showMissed) outcome = r.engaged ? '<span class="pill rej">Below line</span>' : '<span class="pill rej">Gone quiet</span>';
       else outcome = r.sql ? '<span class="pill sql">SQL</span>' : '<span class="pill rej">Rejected</span>';
       return `<tr>
         <td><div class="who">${esc(l.company)}<small>${esc(l.name)}, ${esc(l.title)}</small></div></td>
         <td><div class="who">${esc(l.industry)}<small>${esc(l.size)} staff · ${esc(l.country)}</small></div></td>
         <td>${esc(l.source)}</td>
-        <td class="num">${l.events.length}<br><span class="score-split">${lastEvent(l)}</span></td>
-        <td class="num"><b>${r.score}</b><br><span class="score-split">fit ${r.fit} · eng ${r.engagement}</span></td>
+        <td class="num"><b>${r.score}</b><br><span class="score-split">fit ${r.fit} · activity ${r.engagement}</span></td>
         <td>${outcome}</td>
       </tr>`;
-    }).join('') : '<tr><td colspan="6" class="dim">No leads here with the current settings.</td></tr>';
+    }).join('') : '<tr><td colspan="5" class="dim">No leads here with these settings.</td></tr>';
   }
 
   function render() {

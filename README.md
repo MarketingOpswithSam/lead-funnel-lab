@@ -9,7 +9,7 @@ It's plain HTML, CSS and JavaScript. No build step, no backend, no dependencies 
 - Drag the scoring weights for fit (seniority, company size, target industry) and engagement (demo requests, event meetings, webinars, pricing page views, content downloads, email clicks, web visits, unsubscribes).
 - Set the engagement half-life, which controls how fast old activity stops counting.
 - Set the MQL threshold.
-- Switch between four presets: Balanced, Fit first, Intent first, and Content-heavy. The last one copies a pattern that shows up in a lot of real scoring models, where gated content and webinars carry most of the points.
+- Pick one of four scoring styles in one click: Balanced, Fit first, Intent first, and Content-heavy. The individual weights sit under "Fine-tune weights". The last one copies a pattern that shows up in a lot of real scoring models, where gated content and webinars carry most of the points.
 - Load a new random sample, or go back to the original one (seed 2611).
 
 Everything updates as you drag:
@@ -105,6 +105,7 @@ assets/app.js       sliders, charts and tables
 
 ## Changing it
 
+- **Brand colours** are the first few lines of `assets/styles.css`: `--brand` (main colour) and `--brand-2` (the MQL threshold), with matching dark-mode values just below. The font is Plus Jakarta Sans, loaded in `index.html`.
 - **Default weights and presets** are in `DEFAULT_WEIGHTS` and `PRESETS` in `assets/scoring.js`. Slider ranges and help text are in `CONTROLS` in the same file.
 - **Fit shares, event caps and the 90-day activity window** are constants at the top of `assets/scoring.js`.
 - **Lead sources, their share of volume and their base intent** are in `SOURCES` in `assets/leads.js`. Industries, seniority mix, countries and name pools sit next to it.
