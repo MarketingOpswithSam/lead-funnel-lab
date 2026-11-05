@@ -2,31 +2,34 @@
 /* White page in every system theme, neutral greys, one blue accent. Change the brand colours below. */
 :root {
   color-scheme: light;
-  /* ---- Brand colours: change these ---- */
-  --brand: #2563eb;        /* main colour: SQLs, selected style, sliders */
-  --brand-2: #111827;      /* MQL threshold line */
-  --on-brand: #ffffff;
-  /* -------------------------------------- */
+  /* ---- MarketingOpswithSam brand, taken from the logo ---- */
+  --brand: #311e70;        /* logo indigo: headings, buttons, selected states */
+  --brand-soft: #efecf8;
+  /* Chart colours, validated for colour-blind separation on white, fixed order:
+     indigo, amber, teal, coral. Each one means the same thing everywhere. */
+  --c-sql: #4f3bb0;        /* indigo: SQLs, buyers who reached sales */
+  --c-mql: #d98e00;        /* amber: MQLs */
+  --c-engaged: #14a38b;    /* teal: engaged leads */
+  --c-missed: #e2553b;     /* coral: missed buyers */
+  --c-neutral: #d6d8e1;    /* grey: all leads, leads sales would reject */
+  /* --------------------------------------------------------- */
 
   --bg: #ffffff;
   --surface: #ffffff;
-  --surface-2: #f8fafc;
-  --ink: #111827;
-  --muted: #6b7280;
-  --line: #e5e7eb;
-  --brand-soft: #eff6ff;
-  --brand-2-soft: #f8fafc;
-  --reject: #e5e7eb;
-  --mid: #93c5fd;
-  --engaged: #cbd5e1;
+  --surface-2: #f8f7fc;
+  --ink: #1c1a2b;
+  --muted: #615d75;
+  --line: #e7e5ef;
   --good: #15803d;
-  --bad: #b91c1c;
+  --bad: #c2410c;
+  --flash: #efecf8;
   --shadow: none;
 
-  --flash: #dbeafe;
   --font: 'DM Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-display: 'Anton', 'Impact', 'Arial Narrow Bold', sans-serif;
   --radius: 12px;
 }
+
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body {
@@ -52,7 +55,10 @@ button, input { font: inherit; color: inherit; }
 
 /* Header */
 .top { padding-block: 32px 16px; display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px; }
-.top h1 { font-size: clamp(1.6rem, 3.5vw, 2rem); font-weight: 600; letter-spacing: -0.01em; }
+.top h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(1.9rem, 4.5vw, 2.6rem); letter-spacing: 0.01em; text-transform: uppercase; color: var(--brand); line-height: 1; }
+.brandline { display: flex; align-items: center; gap: 18px; }
+.brandline img { height: 72px; width: auto; display: block; }
+.brandline .divider { width: 1px; align-self: stretch; background: var(--line); }
 .top p { color: var(--muted); margin-top: 6px; max-width: 52ch; }
 .sample { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
 .link-btn {
@@ -63,7 +69,7 @@ button, input { font: inherit; color: inherit; }
 /* Cards */
 .card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--line); padding: 22px; min-width: 0; }
 .card-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 16px; }
-.card-head h2 { font-size: 17px; font-weight: 600; }
+.card-head h2 { font-size: 17px; font-weight: 600; color: var(--brand); }
 .card-head p { color: var(--muted); font-size: 13px; }
 .card-head { margin-bottom: 8px; }
 .why { color: var(--muted); font-size: 13.5px; line-height: 1.55; max-width: 72ch; margin-bottom: 16px; }
@@ -132,6 +138,8 @@ details[open] > summary::before { transform: rotate(45deg); }
 .kpi-delta.up { color: var(--good); }
 .kpi-delta.down { color: var(--bad); }
 .kpi.is-main .kpi-value { color: var(--brand); }
+.kpi-label { display: inline-flex; align-items: center; gap: 7px; }
+.kpi-label i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
 
 .two-up { display: grid; gap: 20px; }
 @media (min-width: 980px) { .two-up { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
@@ -147,26 +155,28 @@ details[open] > summary::before { transform: rotate(45deg); }
   height: 100%; border-radius: 10px; min-width: 6px; display: flex; align-items: center; justify-content: center; gap: 6px;
   font-weight: 600; font-variant-numeric: tabular-nums; font-size: 13px; transition: width 240ms ease; white-space: nowrap;
 }
-.stage-bar[data-stage="0"] { background: var(--reject); color: var(--ink); }
-.stage-bar[data-stage="1"] { background: var(--engaged); color: var(--ink); }
-.stage-bar[data-stage="2"] { background: var(--mid); }
-.stage-bar[data-stage="3"] { background: var(--brand); }
+.stage-bar[data-stage="0"] { background: var(--c-neutral); }
+.stage-bar[data-stage="1"] { background: var(--c-engaged); }
+.stage-bar[data-stage="2"] { background: var(--c-mql); }
+.stage-bar[data-stage="3"] { background: var(--c-sql); }
 @media (prefers-reduced-motion: reduce) { .stage-bar, .rate-fill { transition: none; } }
 
 /* Histogram */
 .hist svg { width: 100%; height: auto; display: block; }
 .hist text { fill: var(--muted); font-family: var(--font); font-size: 12px; }
 .hist .grid line { stroke: var(--line); }
-.hist .bar-yes { fill: var(--brand); }
-.hist .bar-no { fill: var(--reject); }
-.hist .below { opacity: 0.5; }
-.hist .thresh { stroke: var(--brand-2); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.hist .bar-yes { fill: var(--c-sql); }
+.hist .bar-missed { fill: var(--c-missed); }
+.hist rect { stroke: var(--surface); stroke-width: 1; }
+.hist .bar-no { fill: var(--c-neutral); }
+.hist .thresh { stroke: var(--brand); stroke-width: 1.5; stroke-dasharray: 4 3; }
 .hist .thresh-label { fill: var(--ink); font-weight: 500; }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--muted); margin-top: 10px; }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
 .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
-.legend .sw-yes { background: var(--brand); }
-.legend .sw-no { background: var(--reject); }
+.legend .sw-yes { background: var(--c-sql); }
+.legend .sw-missed { background: var(--c-missed); }
+.legend .sw-no { background: var(--c-neutral); }
 
 /* Tables */
 .table-scroll { overflow-x: auto; }
@@ -178,13 +188,14 @@ thead th { position: sticky; top: 0; background: var(--surface); z-index: 1; fon
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .rate-cell { display: flex; align-items: center; gap: 10px; min-width: 170px; }
 .rate-track { flex: 1; height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
-.rate-fill { height: 100%; background: var(--brand); border-radius: 4px; transition: width 240ms ease; }
+.rate-fill { height: 100%; background: var(--c-sql); border-radius: 4px; transition: width 240ms ease; }
 .rate-num { font-weight: 600; font-variant-numeric: tabular-nums; width: 3rem; text-align: right; }
 .dim { color: var(--muted); font-weight: 500; }
 .who { display: flex; flex-direction: column; line-height: 1.35; }
 .who small { color: var(--muted); font-size: 12px; }
 .pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
 .pill.sql { background: var(--brand-soft); color: var(--brand); }
+.pill.missed { background: #fdeee9; color: #a8361f; }
 .pill.rej { background: var(--surface-2); color: var(--muted); }
 .score-split { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
 

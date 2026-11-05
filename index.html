@@ -7,14 +7,18 @@
 <meta name="description" content="Tune a B2B lead-scoring model against 500 sample leads and watch MQLs, SQLs and conversion by source update live.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap">
 <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
 <!--APP-START-->
 <header class="wrap top">
   <div>
-    <h1>Lead Funnel Lab</h1>
+    <div class="brandline">
+      <a href="https://marketingopswithsam.com" target="_blank" rel="noopener"><img src="assets/logo-small.png" alt="Marketing Ops with Sam" width="94" height="72"></a>
+      <span class="divider" aria-hidden="true"></span>
+      <h1>Lead Funnel Lab</h1>
+    </div>
     <p>Pick how you score leads, set the bar for an MQL, and see how many of those leads sales would actually take.</p>
   </div>
   <div class="sample">
@@ -74,13 +78,13 @@
 
   <section class="kpis" aria-label="Headline numbers">
     <div class="card kpi">
-      <span class="kpi-label">MQLs</span>
+      <span class="kpi-label"><i style="background:var(--c-mql)"></i>MQLs</span>
       <span class="kpi-value" id="k-mql">0</span>
       <span class="kpi-sub" id="k-mql-sub"></span>
       <span class="kpi-delta" id="d-mql"></span>
     </div>
     <div class="card kpi">
-      <span class="kpi-label">SQLs</span>
+      <span class="kpi-label"><i style="background:var(--c-sql)"></i>SQLs</span>
       <span class="kpi-value" id="k-sql">0</span>
       <span class="kpi-sub" id="k-sql-sub"></span>
       <span class="kpi-delta" id="d-sql"></span>
@@ -92,7 +96,7 @@
       <span class="kpi-delta" id="d-rate"></span>
     </div>
     <div class="card kpi">
-      <span class="kpi-label">Missed buyers</span>
+      <span class="kpi-label"><i style="background:var(--c-missed)"></i>Missed buyers</span>
       <span class="kpi-value" id="k-missed">0</span>
       <span class="kpi-sub" id="k-missed-sub"></span>
       <span class="kpi-delta" id="d-missed"></span>
@@ -115,10 +119,11 @@
         <h2 id="hist-h">Score distribution</h2>
         <p class="hint">Click the chart to move the MQL line</p>
       </div>
-      <p class="why">Blue leads are ones sales would take, grey ones they would pass on. A good model pushes blue to the right of the line and grey to the left. Where the colours overlap, moving the line can't separate them. Changing the weights can.</p>
+      <p class="why">Indigo and coral are leads sales would take: indigo ones reached sales, coral ones were held back. Grey are leads sales would pass on. A good model pushes buyers to the right of the line and grey to the left. Where the colours overlap, moving the line can't separate them. Changing the weights can.</p>
       <div id="hist"></div>
       <div class="legend">
-        <span><i class="sw-yes"></i>Sales would accept</span>
+        <span><i class="sw-yes"></i>Buyers sent to sales</span>
+        <span><i class="sw-missed"></i>Buyers missed</span>
         <span><i class="sw-no"></i>Sales would reject</span>
       </div>
       <p class="note" id="hist-note"></p>

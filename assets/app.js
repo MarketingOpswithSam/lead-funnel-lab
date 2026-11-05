@@ -341,12 +341,12 @@
     const binW = maxScore > 150 ? 10 : 5;
     const xMax = Math.ceil(Math.max(maxScore + 1, th + binW) / 10) * 10;
     const nb = Math.ceil(xMax / binW);
-    const bins = Array.from({ length: nb }, (_, i) => ({ x0: i * binW, yes: 0, no: 0 }));
+    const bins = Array.from({ length: nb }, (_, i) => ({ x0: i * binW, yes: 0, missed: 0, no: 0 }));
     for (const r of rows) {
       const b = bins[Math.min(nb - 1, Math.floor(r.score / binW))];
-      if (r.lead.salesReady) b.yes++; else b.no++;
+      if (!r.lead.salesReady) b.no++; else if (r.mql) b.yes++; else b.missed++;
     }
-    const yMax = niceMax(Math.max(...bins.map((b) => b.yes + b.no)));
+    const yMax = niceMax(Math.max(...bins.map((b) => b.yes + b.missed + b.no)));
 
     const W = 560, H = 250, m = { l: 34, r: 10, t: 28, b: 28 };
     const pw = W - m.l - m.r, ph = H - m.t - m.b;
@@ -366,15 +366,14 @@
 
     const gap = 2;
     for (const b of bins) {
-      const total = b.yes + b.no;
+      const total = b.yes + b.missed + b.no;
       if (!total) continue;
+      const buyers = b.yes + b.missed;
       const bx = x(b.x0) + gap / 2;
       const bw = Math.max(1, x(b.x0 + binW) - x(b.x0) - gap);
-      const below = b.x0 + binW <= th ? ' below' : '';
-      const title = `<title>${b.x0}–${b.x0 + binW - 1} pts: ${b.yes} sales would accept, ${b.no} would reject</title>`;
-      svg += `<g class="bin${below}">${title}` +
-        `<rect class="bar-yes" x="${bx}" y="${y(b.yes)}" width="${bw}" height="${y(0) - y(b.yes)}" rx="1.5"/>` +
-        `<rect class="bar-no" x="${bx}" y="${y(total)}" width="${bw}" height="${y(b.yes) - y(total)}" rx="1.5"/></g>`;
+      const title = `<title>${b.x0}–${b.x0 + binW - 1} pts: ${b.yes} buyers sent to sales, ${b.missed} buyers missed, ${b.no} sales would reject</title>`;
+      const seg = (cls, from, to) => (to > from ? `<rect class="${cls}" x="${bx}" y="${y(to)}" width="${bw}" height="${y(from) - y(to)}" rx="1.5"/>` : '');
+      svg += `<g class="bin">${title}` + seg('bar-yes', 0, b.yes) + seg('bar-missed', b.yes, buyers) + seg('bar-no', buyers, total) + '</g>';
     }
     const tx = x(th);
     const anchor = tx > W - 140 ? 'end' : 'start';
@@ -417,7 +416,7 @@
     $('#leads').innerHTML = list.length ? list.map((r) => {
       const l = r.lead;
       let outcome;
-      if (showMissed) outcome = r.engaged ? '<span class="pill rej">Below line</span>' : '<span class="pill rej">Gone quiet</span>';
+      if (showMissed) outcome = r.engaged ? '<span class="pill missed">Below line</span>' : '<span class="pill missed">Gone quiet</span>';
       else outcome = r.sql ? '<span class="pill sql">SQL</span>' : '<span class="pill rej">Rejected</span>';
       return `<tr>
         <td><div class="who">${esc(l.company)}<small>${esc(l.name)}, ${esc(l.title)}</small><small>${esc(l.industry)} · ${esc(l.size)} staff · ${esc(l.country)}</small></div></td>
