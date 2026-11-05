@@ -226,18 +226,19 @@
 
   svg.innerHTML = '';
   const zone = mk('rect', { class: 'zone-sales', y: M.t - 26, height: H - M.b - M.t + 26, rx: 10, x: W / 2, width: 0 });
-  const zoneL = mk('text', { class: 'zone-label', y: M.t - 10, x: M.l + 4 }); zoneL.textContent = '← Stays in nurture';
-  const zoneR = mk('text', { class: 'zone-label', y: M.t - 10, 'text-anchor': 'end', x: W - M.r - 6 }); zoneR.textContent = 'Sent to sales →';
+  const zoneL = mk('text', { class: 'zone-label', y: M.t - 10, x: M.l + 4 }); zoneL.textContent = '← Below the cut-off: marketing keeps nurturing';
+  const zoneR = mk('text', { class: 'zone-label', y: M.t - 10, 'text-anchor': 'end', x: W - M.r - 6 }); zoneR.textContent = 'At or above: goes to sales →';
   const axis = mk('g', { class: 'axis' });
   const sweet = mk('line', { class: 'sweet', y1: M.t - 4, y2: H - M.b });
   const sweetLabel = mk('text', { class: 'sweet-label', y: H - M.b - 6 }); sweetLabel.textContent = 'sweet spot';
   const dotsG = mk('g', {});
-  const lineG = mk('g', { class: 'line-g', tabindex: '0', role: 'slider', 'aria-label': 'MQL line', 'aria-valuemin': CTL.threshold.min, 'aria-valuemax': CTL.threshold.max });
+  const lineG = mk('g', { class: 'line-g', tabindex: '0', role: 'slider', 'aria-label': 'Cut-off score', 'aria-valuemin': CTL.threshold.min, 'aria-valuemax': CTL.threshold.max });
   const lineHit = mk('line', { class: 'line-hit', y1: M.t - 30, y2: H - M.b });
   const line = mk('line', { class: 'mql-line', y1: M.t - 30, y2: H - M.b });
-  const handle = mk('rect', { class: 'handle', y: M.t - 44, height: 26, width: 92, rx: 13 });
+  const handle = mk('rect', { class: 'handle', y: M.t - 44, height: 26, width: 112, rx: 13 });
   const handleText = mk('text', { class: 'handle-text', y: M.t - 26, 'text-anchor': 'middle' });
-  lineG.append(lineHit, line, handle, handleText);
+  const hint = mk('text', { class: 'drag-hint', y: M.t - 26 }); hint.textContent = 'drag me';
+  lineG.append(lineHit, line, handle, handleText, hint);
   svg.append(zone, zoneL, zoneR, axis, sweet, sweetLabel, dotsG, lineG);
 
   function buildDots() {
@@ -312,20 +313,25 @@
     });
     zone.setAttribute('x', lx); zone.setAttribute('width', Math.max(0, W - M.r - lx + 8));
     [line, lineHit].forEach((l) => { l.setAttribute('x1', lx); l.setAttribute('x2', lx); });
-    const hw = 92, hx = Math.min(W - hw - 2, Math.max(2, lx - hw / 2));
+    const hw = 112, hx = Math.min(W - hw - 2, Math.max(2, lx - hw / 2));
+    hint.setAttribute('x', hx + hw + 10);
+    lineG.classList.toggle('hinting', !state.touched);
     handle.setAttribute('x', hx);
     handleText.setAttribute('x', hx + hw / 2);
-    handleText.textContent = '◂ MQL ≥ ' + th + ' ▸';
+    handleText.textContent = '◂ Cut-off ' + th + ' ▸';
     lineG.setAttribute('aria-valuenow', th);
-    lineG.setAttribute('aria-valuetext', `MQL line ${th}, ${current ? current.totals.mql : 0} MQLs, grade ${gradeOf(model.lift)}`);
+    lineG.setAttribute('aria-valuetext', `Cut-off score ${th}, ${current ? current.totals.mql : 0} MQLs, grade ${gradeOf(model.lift)}`);
     const sx = layout.sx(Math.min(model.bestTh, layout.xMax));
     sweet.setAttribute('x1', sx); sweet.setAttribute('x2', sx);
     sweetLabel.setAttribute('x', sx + 6);
     const onSweet = Math.abs(th - model.bestTh) <= 2;
     sweet.style.opacity = onSweet ? 0.35 : 1;
     sweetLabel.style.opacity = onSweet ? 0 : 1;
-    zoneL.style.opacity = lx - M.l > 170 ? 1 : 0;
-    zoneR.style.opacity = W - M.r - lx > 150 ? 1 : 0;
+    const narrow = W < 600;
+    zoneL.textContent = narrow ? '← Marketing keeps' : '← Below the cut-off: marketing keeps nurturing';
+    zoneR.textContent = narrow ? 'Goes to sales →' : 'At or above: goes to sales →';
+    zoneL.style.opacity = lx - M.l > (narrow ? 140 : 320) ? 1 : 0;
+    zoneR.style.opacity = W - M.r - lx > (narrow ? 130 : 210) ? 1 : 0;
     zoneR.setAttribute('x', W - M.r - 6);
     const step = layout.xMax <= 60 ? 10 : layout.xMax <= 160 ? 20 : 50;
     let ax = `<line x1="${M.l}" x2="${W - M.r}" y1="${H - M.b + 2}" y2="${H - M.b + 2}"/>`;
@@ -548,7 +554,7 @@
     }
     lastSettledGrade = g;
     const sweetNow = Math.abs(state.weights.threshold - model.bestTh) <= 2;
-    if (!opts.quiet && state.touched && sweetNow && !wasSweet) toast('You found the sweet spot for these weights.');
+    if (!opts.quiet && state.touched && sweetNow && !wasSweet) toast('You found the sweet spot: the best cut-off for these weights.');
     wasSweet = sweetNow;
     checkBadges({ t, rate: current.rate, recall: current.recall, lift: model.lift, touched: state.touched, expsDone: state.expDone.size, sweet: sweetNow }, opts.quiet);
     const bg = $('#best-grade'); if (bg) bg.textContent = gradeOf(state.bestLift);
@@ -602,7 +608,7 @@
     else {
       s = `Sales trusts <b>${Math.round(rate)}%</b> of the leads you send, and you catch <b>${Math.round(recall)}%</b> of the buyers. `;
       if (band.length) s += `Just left of the line sit ${band.length} leads, and ${buyers} of them are buyers. `;
-      s += Math.abs(th - model.bestTh) <= 2 ? 'You are on the sweet spot for these weights. To score higher, change the weights.' : `The dashed sweet spot at ${model.bestTh} is the best line for these weights.`;
+      s += Math.abs(th - model.bestTh) <= 2 ? 'You are on the sweet spot, the best cut-off for these weights. To score higher, change the weights.' : `The dashed green line at ${model.bestTh} is the sweet spot: the best cut-off for these weights.`;
     }
     $('#insight').innerHTML = s;
   }

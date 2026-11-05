@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="assets/styles.css?v=202611050420">
+<link rel="stylesheet" href="assets/styles.css?v=202611050427">
 </head>
 <body>
 <!--APP-START-->
@@ -25,20 +25,25 @@
 
 <header class="hero">
   <h1>Who should sales call?</h1>
-  <p class="lede">Here are 500 made-up B2B leads, one dot each, placed by score. Some of them would buy. The score can't tell which. Drag the line and see who ends up in front of sales.</p>
+  <p class="lede">Here are 500 made-up B2B leads, one dot each, placed by score. Some of them would buy. The score can't tell which. Drag the purple line and see who ends up in front of sales.</p>
 </header>
 
 <main>
   <section class="play" id="play" aria-label="Play">
     <div class="stage arena">
+      <ol class="how" aria-label="How it works">
+        <li><b>1</b><span>Every lead earns points for who they are and what they did.</span></li>
+        <li><b>2</b><span>Leads at or above the <em class="hl">cut-off score</em> (the purple line) become MQLs.</span></li>
+        <li><b>3</b><span>MQLs go to sales. Everyone else stays with marketing.</span></li>
+      </ol>
       <div class="legend" id="legend"></div>
-      <div class="mini" aria-label="MQL line">
+      <div class="mini" aria-label="Cut-off score">
         <span class="mini-grade" id="mini-grade">C</span>
-        <label for="w-threshold-m">MQL line <b id="o-threshold-m">45</b></label>
+        <label for="w-threshold-m">Cut-off score <b id="o-threshold-m">45</b></label>
         <input type="range" id="w-threshold-m" data-key="threshold" min="1" max="150" step="1">
       </div>
       <div class="swarm-wrap" id="swarm-wrap">
-        <svg id="swarm" viewBox="0 0 960 340" role="img" aria-label="500 leads plotted by score with the MQL line"></svg>
+        <svg id="swarm" viewBox="0 0 960 340" role="img" aria-label="500 leads plotted by score, with the cut-off score that decides who goes to sales"></svg>
         <div class="tip" id="tip" hidden></div>
       </div>
 
@@ -67,10 +72,10 @@
       <div class="segmented" id="presets"></div>
 
       <div class="ctl ctl-line">
-        <label for="w-threshold">MQL line</label>
+        <label for="w-threshold">Cut-off score</label>
         <output id="o-threshold" for="w-threshold"></output>
         <input type="range" id="w-threshold" data-key="threshold" min="1" max="150" step="1">
-        <small>Leads at or above this score go to sales.</small>
+        <small>Leads scoring this or more become MQLs (marketing qualified leads) and go to sales. This is the purple line on the chart.</small>
       </div>
 
       <button class="solid-btn" id="ai-btn" type="button"><span id="ai-label">Find better weights for me</span></button>
@@ -125,9 +130,9 @@
   </section>
 </main>
 <!--APP-END-->
-<script src="assets/leads.js?v=202611050420"></script>
-<script src="assets/scoring.js?v=202611050420"></script>
-<script src="assets/experiments.js?v=202611050420"></script>
-<script src="assets/app.js?v=202611050420"></script>
+<script src="assets/leads.js?v=202611050427"></script>
+<script src="assets/scoring.js?v=202611050427"></script>
+<script src="assets/experiments.js?v=202611050427"></script>
+<script src="assets/app.js?v=202611050427"></script>
 </body>
 </html>

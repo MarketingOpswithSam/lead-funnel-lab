@@ -260,3 +260,17 @@ input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.12); }
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
 }
+
+/* How it works, above the chart */
+.how { list-style: none; margin: 0 0 18px; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 720px) { .how { grid-template-columns: minmax(0, 1fr); gap: 8px; } }
+.how li { display: flex; gap: 10px; align-items: flex-start; font-size: 14.5px; color: var(--muted); line-height: 1.4; }
+.how li b { flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--band); color: var(--brand); font-size: 13px; font-weight: 700; display: grid; place-items: center; }
+.how .hl { color: var(--brand); font-weight: 600; font-style: normal; }
+
+/* First-visit hint on the line */
+#swarm .drag-hint { fill: var(--brand); font-size: 13px; font-weight: 600; font-family: var(--font); opacity: 0; }
+#swarm .line-g.hinting .drag-hint { opacity: 1; }
+#swarm .line-g.hinting { animation: nudge 2.6s var(--ease) infinite; }
+@keyframes nudge { 0%, 60%, 100% { transform: translateX(0); } 70% { transform: translateX(10px); } 80% { transform: translateX(-6px); } 90% { transform: translateX(3px); } }
+@media (prefers-reduced-motion: reduce) { #swarm .line-g.hinting { animation: none; } }

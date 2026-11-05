@@ -53,20 +53,20 @@
     {
       id: 'raise-the-bar',
       kind: 'direction',
-      hypothesis: 'A higher MQL line makes sales happier but leaves more buyers behind.',
-      question: 'Starting from the default model, raise the MQL line from 45 to 60. What happens to missed buyers?',
+      hypothesis: 'A higher cut-off score makes sales happier but leaves more buyers behind.',
+      question: 'Starting from the default model, raise the cut-off score from 45 to 60. What happens to missed buyers?',
       patch: { threshold: 60 },
       metric: 'missed',
       metricLabel: 'Missed buyers',
       expect: 'up',
-      lesson: 'Every point you add to the line pushes some buyers back into nurture, where they wait longer to hear from sales. Speed matters: in Harvard Business Review’s study of online leads, firms that tried to reach a lead within an hour were nearly 7 times as likely to qualify it as firms that tried an hour later.',
+      lesson: 'Every point you add to the cut-off pushes some buyers back into nurture, where they wait longer to hear from sales. Speed matters: in Harvard Business Review’s study of online leads, firms that tried to reach a lead within an hour were nearly 7 times as likely to qualify it as firms that tried an hour later.',
       source: 'hbr',
     },
     {
       id: 'lower-the-bar',
       kind: 'direction',
-      hypothesis: 'A lower MQL line creates more pipeline AND keeps quality.',
-      question: 'Starting from the default model, drop the MQL line from 45 to 30. What happens to sales trust?',
+      hypothesis: 'A lower cut-off score creates more pipeline and keeps quality.',
+      question: 'Starting from the default model, drop the cut-off score from 45 to 30. What happens to sales trust?',
       patch: { threshold: 30 },
       metric: 'rate',
       metricLabel: 'Sales trust',
@@ -78,8 +78,8 @@
 
   // ctx: { t, rate, recall, lift, touched, expsDone, sweet }
   const BADGES = [
-    { id: 'first-move', title: 'First move', desc: 'Change any weight or drag the MQL line', check: (c) => c.touched },
-    { id: 'sweet-spot', title: 'Sweet spot', desc: 'Land the MQL line on the dashed sweet spot', check: (c) => c.touched && c.sweet },
+    { id: 'first-move', title: 'First move', desc: 'Change any weight or drag the cut-off', check: (c) => c.touched },
+    { id: 'sweet-spot', title: 'Sweet spot', desc: 'Land the cut-off on the dashed sweet spot', check: (c) => c.touched && c.sweet },
     { id: 'trusted', title: 'Trusted by sales', desc: 'Sales trust of 55% or more on at least 60 MQLs', check: (c) => c.touched && c.t.mql >= 60 && c.rate >= 55 },
     { id: 'net', title: 'Wide net', desc: 'Catch 60% of buyers while sales trust stays at 40%', check: (c) => c.touched && c.recall >= 60 && c.rate >= 40 },
     { id: 'beat-default', title: 'Beat the default', desc: 'Find weights that score higher than the default model', check: (c) => c.lift >= 1 },
