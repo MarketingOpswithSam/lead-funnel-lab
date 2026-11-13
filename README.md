@@ -15,6 +15,38 @@ Lead Funnel Lab answers one question: who should sales call? The 500 sample lead
 - "Six things worth knowing" pairs a sourced number with a button that shows it on the chart.
 - "Where the buyers come from" shows sales trust by lead source, and "Three leads from this sample" tells the story of one buyer reached, one missed and one call sales didn't want.
 
+## Embed it on your website
+
+Add `?embed=1` to the address and the lab drops its own top bar, adds an "Open full screen" link, and tells the page around it how tall it is, so it sits on your page with no scrollbar inside it. The full snippet is in [`embed-snippet.html`](embed-snippet.html):
+
+```html
+<div class="lead-funnel-lab-embed" style="max-width:1240px;margin:0 auto;">
+  <iframe src="https://marketingopswithsam.github.io/lead-funnel-lab/?embed=1"
+    title="Lead Funnel Lab: who should sales call?" loading="lazy"
+    style="width:100%;height:1400px;border:0;display:block;"></iframe>
+</div>
+<script>
+  window.addEventListener('message', function (e) {
+    if (e.origin !== 'https://marketingopswithsam.github.io') return;
+    if (!e.data || e.data.type !== 'lead-funnel-lab:height') return;
+    document.querySelectorAll('.lead-funnel-lab-embed iframe').forEach(function (f) {
+      if (f.contentWindow === e.source) f.style.height = e.data.height + 'px';
+    });
+  });
+</script>
+```
+
+Where to paste it:
+
+- **WordPress**: add a "Custom HTML" block to the page and paste the whole snippet.
+- **Webflow**: drag an "Embed" element onto the page, paste, save and publish.
+- **Squarespace**: add a "Code" block, set it to HTML, paste. Code blocks with scripts need a Business plan or higher.
+- **Framer**: add an "Embed" component, choose HTML, paste.
+- **HubSpot CMS**: use a "Custom HTML" module, or Insert > Embed in a rich text module.
+- **Wix**: Add > Embed Code > Embed HTML, choose "Code", paste. Wix puts embeds in its own frame, so the auto-height script can't reach the page. Set the embed box tall enough by hand (about 7,000px on desktop) or link to the full-screen page instead.
+
+If your builder strips the script, the iframe still works at a fixed height. Change `height:1400px` to around `7000px`, or link out to the full page.
+
 ## How marketers can use it
 
 - Try a scoring change here before making it in HubSpot, Marketo or Dynamics 365 Customer Insights, and see what it does to MQL volume and sales acceptance.

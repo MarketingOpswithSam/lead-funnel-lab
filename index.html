@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="assets/styles.css?v=202611050446">
+<link rel="stylesheet" href="assets/styles.css?v=202611130430">
 </head>
 <body>
 <!--APP-START-->
@@ -19,6 +19,7 @@
     <div class="nav-links">
       <a href="#play">Play</a><a href="#test">Test</a><a href="#learn">Learn</a><a href="#sources-sec">Sources</a>
     </div>
+    <a class="nav-full" href="https://marketingopswithsam.github.io/lead-funnel-lab/" target="_blank" rel="noopener">Open full screen</a>
     <button class="nav-btn" id="reseed" type="button">Shuffle leads</button>
   </div>
 </nav>
@@ -96,14 +97,15 @@
   </section>
 
   <section class="learn" id="learn" aria-labelledby="learn-h">
-    <h2 id="learn-h">Six things worth knowing.</h2>
+    <h2 id="learn-h">Six facts that shape good scoring.</h2>
+    <p class="learn-lede">Each one comes from published research. Press "Try it" and the chart above shows what it means for your leads. You can always put your own settings back.</p>
     <div class="facts">
-      <div class="fact"><b>30%</b><p>of a rep's week goes on selling, according to Salesforce's State of Sales. Scoring decides who gets that time.</p><button class="link-btn" type="button" data-try="capacity">Show the top 50 leads</button></div>
-      <div class="fact"><b>&lt;1%</b><p>of leads become customers, by Forrester's count. Most of your list should never reach sales.</p><button class="link-btn" type="button" data-try="buyers">Show only real buyers</button></div>
-      <div class="fact"><b>5%</b><p>of B2B buyers are in market at any time (Ehrenberg-Bass for the LinkedIn B2B Institute). Job titles say who could buy. Recent activity says who is buying.</p><button class="link-btn" type="button" data-try="fit">Score on job title only</button></div>
-      <div class="fact"><b>2021</b><p>is when Apple's Mail Privacy Protection made email opens unreliable. Fresh, specific signals like a pricing visit last week matter more.</p><button class="link-btn" type="button" data-try="fade">Make old activity fade fast</button></div>
-      <div class="fact"><b>±</b><p>Moving the line is a trade. Right gives sales fewer wasted calls and you more missed buyers. Left does the opposite.</p><button class="link-btn" type="button" data-try="sweep">Sweep the line</button></div>
-      <div class="fact"><b>40 + 40</b><p>won and lost leads is the minimum Dynamics 365 Sales needs to train predictive scoring (Microsoft Learn). It learns the weights instead of you setting them.</p><button class="link-btn" type="button" data-try="ai">Let the computer try</button></div>
+      <div class="fact"><b class="fact-num">30%</b><p class="fact-what">of a sales rep's week is spent actually selling.</p><p class="fact-so"><span>So:</span> only send sales the leads worth that time.</p><button class="try-btn" type="button" data-try="capacity">Try it: send only the top 50 leads</button><p class="fact-src">Salesforce, State of Sales</p></div>
+      <div class="fact"><b class="fact-num">Under 1%</b><p class="fact-what">of leads ever become customers.</p><p class="fact-so"><span>So:</span> most leads should never go to sales.</p><button class="try-btn" type="button" data-try="buyers">Try it: show only the real buyers</button><p class="fact-src">Forrester</p></div>
+      <div class="fact"><b class="fact-num">5%</b><p class="fact-what">of B2B buyers are looking to buy in any given quarter.</p><p class="fact-so"><span>So:</span> what people do now matters more than who they are.</p><button class="try-btn" type="button" data-try="fit">Try it: score on job title and company only</button><p class="fact-src">Ehrenberg-Bass Institute for the LinkedIn B2B Institute</p></div>
+      <div class="fact"><b class="fact-num">2021</b><p class="fact-what">is the year Apple made email opens unreliable.</p><p class="fact-so"><span>So:</span> score fresh, specific actions, like a pricing visit last week.</p><button class="try-btn" type="button" data-try="fade">Try it: make old activity count for less</button><p class="fact-src">Apple, Mail Privacy Protection</p></div>
+      <div class="fact"><b class="fact-num">2</b><p class="fact-what">kinds of mistake every cut-off makes: wasted calls and missed buyers.</p><p class="fact-so"><span>So:</span> moving the line only swaps one mistake for the other. Better scoring reduces both.</p><button class="try-btn" type="button" data-try="sweep">Try it: sweep the line left and right</button><p class="fact-src">How cut-offs work</p></div>
+      <div class="fact"><b class="fact-num">40 + 40</b><p class="fact-what">won and lost leads is the least Dynamics 365 needs to learn scoring on its own.</p><p class="fact-so"><span>So:</span> once you have the history, a computer can find the weights for you.</p><button class="try-btn" type="button" data-try="ai">Try it: let the computer find the weights</button><p class="fact-src">Microsoft Learn</p></div>
     </div>
   </section>
 
@@ -131,9 +133,9 @@
   </section>
 </main>
 <!--APP-END-->
-<script src="assets/leads.js?v=202611050446"></script>
-<script src="assets/scoring.js?v=202611050446"></script>
-<script src="assets/experiments.js?v=202611050446"></script>
-<script src="assets/app.js?v=202611050446"></script>
+<script src="assets/leads.js?v=202611130430"></script>
+<script src="assets/scoring.js?v=202611130430"></script>
+<script src="assets/experiments.js?v=202611130430"></script>
+<script src="assets/app.js?v=202611130430"></script>
 </body>
 </html>

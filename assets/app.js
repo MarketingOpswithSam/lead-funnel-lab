@@ -8,6 +8,22 @@
   const LEAD_COUNT = 500;
   const STORE_KEY = 'lead-funnel-lab:v3';
   const REDUCED = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  // Embed mode (?embed=1): sits inside another site's page, reports its height so the host can size the frame.
+  const EMBED = new URLSearchParams(location.search).has('embed');
+  if (EMBED) {
+    document.documentElement.classList.add('embed');
+    const post = () => { try { window.parent.postMessage({ type: 'lead-funnel-lab:height', height: Math.ceil(document.documentElement.scrollHeight) }, '*'); } catch (e) { /* no parent */ } };
+    if ('ResizeObserver' in window) new ResizeObserver(post).observe(document.body);
+    window.addEventListener('load', post);
+    setTimeout(post, 500);
+  }
+  let quietHoverUntil = 0;
+  function scrollToEl(el, offset) {
+    if (!el) return;
+    quietHoverUntil = performance.now() + 1400;
+    if (EMBED) { el.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'start' }); return; }
+    window.scrollTo({ top: Math.max(0, el.getBoundingClientRect().top + window.scrollY - offset), behavior: REDUCED ? 'auto' : 'smooth' });
+  }
 
   const $ = (s) => document.querySelector(s);
   const fmt = (n) => Math.round(n).toLocaleString('en-AU');
@@ -198,7 +214,7 @@
     const order = ['Engagement: what they did', 'Fit: who they are', 'Handover and decay'];
     $('#controls').innerHTML = order.filter((g) => groups[g]).map((g) => `<p class="dock-label">${esc(names[g])}</p>${groups[g].map(ctlHtml).join('')}`).join('');
     const ctls = $('#controls');
-    ctls.addEventListener('pointerover', (e) => { const c = e.target.closest('[data-ctl]'); if (c && e.pointerType === 'mouse') focusSignal(c.dataset.ctl); });
+    ctls.addEventListener('pointerover', (e) => { const c = e.target.closest('[data-ctl]'); if (c && e.pointerType === 'mouse' && performance.now() > quietHoverUntil) focusSignal(c.dataset.ctl); });
     ctls.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') focusSignal(null); });
     ctls.addEventListener('focusin', (e) => { const c = e.target.closest('[data-ctl]'); if (c) focusSignal(c.dataset.ctl); });
     ctls.addEventListener('focusout', () => focusSignal(null));
@@ -238,7 +254,7 @@
     document.querySelectorAll('[data-try]').forEach((b) => b.addEventListener('click', () => tryRule(b.dataset.try, b)));
     $('#ai-btn').addEventListener('click', aiTune);
     $('#quizbar-back').addEventListener('click', restoreMine);
-    $('#quizbar-quiz').addEventListener('click', () => { const e = $('#exp-body'); const top = e.getBoundingClientRect().top + window.scrollY - 80; window.scrollTo({ top, behavior: REDUCED ? 'auto' : 'smooth' }); });
+    $('#quizbar-quiz').addEventListener('click', () => scrollToEl($(noteReturn), 80));
     $('#sources').addEventListener('click', (e) => { const r = e.target.closest('.src-row'); if (r) r.classList.toggle('open'); });
   }
 
@@ -814,13 +830,25 @@
     const qb = $('#quizbar');
     const pinned = getComputedStyle(document.querySelector('.stage')).position === 'sticky';
     const anchor = !pinned && qb && !qb.hidden ? qb : document.getElementById('play');
-    const top = anchor.getBoundingClientRect().top + window.scrollY - 64;
-    window.scrollTo({ top: Math.max(0, top), behavior: REDUCED ? 'auto' : 'smooth' });
+    scrollToEl(anchor, 64);
+  }
+  let noteReturn = '#exp-body';
+  function showChartNote(text, backLabel, backSel) {
+    if (!state.myWeights) state.myWeights = Object.assign({}, state.weights);
+    noteReturn = backSel;
+    $('#quizbar-text').textContent = text;
+    $('#quizbar-quiz').textContent = backLabel;
+    $('#quizbar').hidden = false;
+    showChartTop();
   }
   function hideQuizbar() { const q = $('#quizbar'); if (q) q.hidden = true; }
   function restoreMine() {
     if (state.myWeights) applyWeights(state.myWeights);
     state.myWeights = null;
+    state.show = { tp: true, fn: true, fp: true, tn: true };
+    document.querySelectorAll('#legend [data-cat]').forEach((b) => b.setAttribute('aria-pressed', 'true'));
+    const bt = document.querySelector('[data-try="buyers"]'); if (bt) bt.textContent = 'Try it: show only the real buyers';
+    schedule();
     hideQuizbar();
     const b = $('#exp-back'); if (b) b.remove();
   }
@@ -906,9 +934,7 @@
       $('#exp-next').onclick = () => { state.expIdx++; persist(); renderExp(true); };
       const ld = $('#exp-load');
       ld.onclick = () => {
-        if (!state.myWeights) state.myWeights = Object.assign({}, state.weights);
-        const qb = $('#quizbar'); $('#quizbar-text').textContent = quizNote; qb.hidden = false;
-        showChartTop();
+        showChartNote(quizNote, 'Back to the quiz', '#exp-body');
         setTimeout(() => applyWeights(loadWeights), REDUCED ? 0 : 350);
         ld.outerHTML = '<button class="ghost-btn" id="exp-back" type="button">Put my settings back</button>';
         $('#exp-back').onclick = () => restoreMine();
@@ -923,30 +949,36 @@
   function f1At(w) { return bestLine(evaluate(leads, w).rows).best; }
   function focusArena() {
     const a = document.querySelector('.arena');
+    quietHoverUntil = performance.now() + 1400;
+    if (EMBED) { a.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'start' }); return; }
     const r = a.getBoundingClientRect();
     if (r.top < 0 || r.bottom > innerHeight) a.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'center' });
   }
   let sweeping = 0;
+  const FACT_NOTE = {
+    capacity: 'Showing fact 1: the cut-off is set so only the top 50 leads go to sales, as if sales only had time for 50 calls.',
+    buyers: 'Showing fact 2: only the real buyers are visible. The grey and amber dots are hidden. Most of the list would never buy.',
+    fit: 'Showing fact 3: scoring on job title, company size and industry only, with every buying signal set to 0. Watch how many real buyers (coral) get missed.',
+    fade: 'Showing fact 4: activity now loses half its points every 7 days, so only recent actions really count.',
+    sweep: 'Showing fact 5: the line sweeps left and right. Watch amber (wasted calls) and coral (missed buyers) trade places.',
+    ai: 'Showing fact 6: the computer is trying hundreds of weight changes and keeping the ones that match who sales actually took.',
+  };
   function tryRule(kind, btn) {
-    focusArena();
+    if (kind === 'buyers' && state.show.fp === false && state.show.tn === false) { restoreMine(); return; }
+    showChartNote(FACT_NOTE[kind], 'Back to the six facts', '#learn');
     if (kind === 'capacity') {
       const sorted = current.rows.filter((r) => r.engaged).map((r) => r.score).sort((a, b) => b - a);
       const cut = sorted[Math.min(49, sorted.length - 1)] || 1;
-      applyWeights(Object.assign({}, state.weights, { threshold: cut }));
-      setTimeout(() => toast('If sales only has time for about 50 calls, these are the leads that get them.'), 500);
+      setTimeout(() => applyWeights(Object.assign({}, state.weights, { threshold: cut })), REDUCED ? 0 : 350);
     } else if (kind === 'buyers') {
-      const only = !(state.show.fp === false && state.show.tn === false);
-      state.show = { tp: true, fn: true, fp: !only, tn: !only };
+      state.show = { tp: true, fn: true, fp: false, tn: false };
       document.querySelectorAll('#legend [data-cat]').forEach((b) => b.setAttribute('aria-pressed', String(state.show[b.dataset.cat])));
-      btn.textContent = only ? 'Show everyone again' : 'Try it: show only real buyers';
-      if (only) toast('These are the only leads sales would take. Everything else is hidden.');
+      btn.textContent = 'Show everyone again';
       schedule();
     } else if (kind === 'fit') {
-      applyWeights(Object.assign({}, DEFAULT_WEIGHTS, { demoRequest: 0, eventMeeting: 0, webinarAttend: 0, pricingPage: 0, contentDownload: 0, emailClick: 0, webVisit: 0, unsubscribe: 0, threshold: 30 }));
-      setTimeout(() => toast('Scoring on job title and company alone. Watch how many coral dots get left behind.'), 500);
+      setTimeout(() => applyWeights(Object.assign({}, DEFAULT_WEIGHTS, { demoRequest: 0, eventMeeting: 0, webinarAttend: 0, pricingPage: 0, contentDownload: 0, emailClick: 0, webVisit: 0, unsubscribe: 0, threshold: 30 })), REDUCED ? 0 : 350);
     } else if (kind === 'fade') {
-      applyWeights(Object.assign({}, DEFAULT_WEIGHTS, { halfLife: 7 }));
-      setTimeout(() => toast('Activity now loses half its value every 7 days. Last month barely counts.'), 500);
+      setTimeout(() => applyWeights(Object.assign({}, state.weights, { halfLife: 7 })), REDUCED ? 0 : 350);
     } else if (kind === 'sweep') {
       if (sweeping) return;
       const start = state.weights.threshold;
@@ -956,18 +988,19 @@
       for (let v = 80; v >= start; v -= 1) path.push(v);
       let k = 0;
       state.touched = true;
-      frozenXMax = layout.xMax;
-      svg.classList.add('instant');
-      sweeping = setInterval(() => {
-        state.weights.threshold = path[k++]; syncInputs(); schedule();
-        if (k >= path.length) {
-          clearInterval(sweeping); sweeping = 0; frozenXMax = null; svg.classList.remove('instant');
-          toast('Further left reaches more buyers and wastes more calls. Further right does the opposite.');
-          schedule(); settleSoon(200);
-        }
-      }, REDUCED ? 1 : 28);
+      setTimeout(() => {
+        frozenXMax = layout.xMax;
+        svg.classList.add('instant');
+        sweeping = setInterval(() => {
+          state.weights.threshold = path[k++]; syncInputs(); schedule();
+          if (k >= path.length) {
+            clearInterval(sweeping); sweeping = 0; frozenXMax = null; svg.classList.remove('instant');
+            schedule(); settleSoon(200);
+          }
+        }, REDUCED ? 1 : 28);
+      }, REDUCED ? 0 : 500);
     } else if (kind === 'ai') {
-      aiTune();
+      setTimeout(aiTune, REDUCED ? 0 : 400);
     }
   }
 
